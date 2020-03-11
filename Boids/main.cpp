@@ -1,10 +1,10 @@
-#include "pch.h"
 #include "vec3.h"
 #include "Boid.h"
 #include <iostream>
 #include <random>
 #include <vector>
 #include "time.h"
+//#include <GLFW/glfw3.h>
 
 constexpr int numBoids = 100;
 constexpr int numObst = 40;

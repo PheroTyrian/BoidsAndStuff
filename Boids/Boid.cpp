@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "Boid.h"
 #include <cmath>
 #include <random>
