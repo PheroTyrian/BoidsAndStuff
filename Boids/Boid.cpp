@@ -49,30 +49,38 @@ vec3 collisionAvoidance(std::vector<vec3>& obstacles, vec3 pos, float avoidDist)
 void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 {
 	//Find "flock" data
-	vec3 sumPos = 0.0f;
-	vec3 sumVel = 0.0f;
+	vec3 sumPos = vec3();
+	vec3 sumVel = vec3();
 	for (Boid& boid : boids)
 	{
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
-		if (position =)
+		vec3 diff = position - boid.position;
+		if (diff.square() < detectionDistance)
+		{
+			if (diff == vec3())
+				continue;
+
+			sumPos += boid.position;
+			sumVel += boid.velocity;
+		}
 	}
+	sumPos = sumPos.unit();
 	//Clear acceleration accumulator
 	acceleration = vec3();
 	//Collision avoidance
-	vec3 coll = collisionAvoidance(obstacles, position, avoidanceDistance);
+	vec3 collision = collisionAvoidance(obstacles, position, avoidanceDistance);
 	//Match velocity with flock
-
-	//Accumulate
+	sumVel = sumVel.unit();
+	vec3 matchVel = (sumVel - velocity) / maxAcceleration;
 	//Move toward flock centre
+
 	//Accumulate
 	//Random acceleration
 	//Accumulate
-
-	//Apply acceleration
-	//Apply velocity
 }
 
-Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid) : position(pos), velocity(vel), acceleration(vec3(0.0f, 0.0f, 0.0f)), maxAcceleration(acc), dragEffect(drag), avoidanceDistance(avoid)
+Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect) 
+	: position(pos), velocity(vel), acceleration(vec3(0.0f, 0.0f, 0.0f)), maxAcceleration(acc), dragEffect(drag), avoidanceDistance(avoid), detectionDistance(detect)
 {
 }
 

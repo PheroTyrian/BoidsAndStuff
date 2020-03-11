@@ -39,7 +39,7 @@ vec3 vec3::unit() const
 
 inline bool vec3::operator==(const vec3 & rhs) const
 {
-	if (x == rhs.x && y == rhs.y && z == rhs.z)
+	if (this->x == rhs.x && this->y == rhs.y && this->z == rhs.z)
 		return true;
 	else
 		return false;
@@ -47,7 +47,7 @@ inline bool vec3::operator==(const vec3 & rhs) const
 
 inline bool vec3::operator!=(const vec3 & rhs) const
 {
-	if (x != rhs.x || y != rhs.y || z != rhs.z)
+	if (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z)
 		return true;
 	else 
 		return false;
@@ -56,6 +56,14 @@ inline bool vec3::operator!=(const vec3 & rhs) const
 inline vec3 vec3::operator+(const vec3 & rhs) const
 {
 	return vec3(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z);
+}
+
+inline vec3 & vec3::operator+=(const vec3 & rhs)
+{
+	this->x += rhs.x;
+	this->y += rhs.y;
+	this->z += rhs.z;
+	return *this;
 }
 
 inline vec3 vec3::operator-(const vec3 & rhs) const
@@ -76,4 +84,9 @@ inline vec3 vec3::operator*(const float & rhs) const
 inline vec3 vec3::operator/(const vec3 & rhs) const
 {
 	return vec3(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z);
+}
+
+inline vec3 vec3::operator/(const float & rhs) const
+{
+	return vec3(this->x / rhs, this->y / rhs, this->z / rhs);
 }

@@ -11,12 +11,13 @@ private:
 	const float maxAcceleration;
 	const float dragEffect;
 	const float avoidanceDistance;
+	const float detectionDistance;
 
 public:
 	void update(std::vector<Boid>& boids, std::vector<vec3>& obstacle);
 
 
-	Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid);
+	Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect);
 	~Boid();
 };
 
