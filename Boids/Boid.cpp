@@ -48,10 +48,13 @@ vec3 collisionAvoidance(std::vector<vec3>& obstacles, vec3 pos, float avoidDist)
 
 void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 {
-	//Find "flock"
+	//Find "flock" data
+	vec3 sumPos = 0.0f;
+	vec3 sumVel = 0.0f;
 	for (Boid& boid : boids)
 	{
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
+		if (position =)
 	}
 	//Clear acceleration accumulator
 	acceleration = vec3();

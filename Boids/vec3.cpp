@@ -37,6 +37,22 @@ vec3 vec3::unit() const
 	return vec3(x / m, y / m, z / m);
 }
 
+inline bool vec3::operator==(const vec3 & rhs) const
+{
+	if (x == rhs.x && y == rhs.y && z == rhs.z)
+		return true;
+	else
+		return false;
+}
+
+inline bool vec3::operator!=(const vec3 & rhs) const
+{
+	if (x != rhs.x || y != rhs.y || z != rhs.z)
+		return true;
+	else 
+		return false;
+}
+
 inline vec3 vec3::operator+(const vec3 & rhs) const
 {
 	return vec3(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z);

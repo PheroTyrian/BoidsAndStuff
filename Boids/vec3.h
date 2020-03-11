@@ -13,6 +13,8 @@ public:
 	float dot(const vec3& other) const;
 	vec3 unit() const;
 
+	inline bool operator==(const vec3& rhs) const;
+	inline bool operator!=(const vec3& rhs) const;
 	inline vec3 operator+(const vec3& rhs) const;
 	inline vec3 operator-(const vec3& rhs) const;
 	inline vec3 operator*(const vec3& rhs) const;
