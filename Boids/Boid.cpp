@@ -113,8 +113,13 @@ void Boid::simulate(float deltaT)
 		position.z += 200.0f;
 }
 
-Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect) 
-	: position(pos), velocity(vel), acceleration(vec3(0.0f, 0.0f, 0.0f)), maxAcceleration(acc), dragEffect(drag), avoidanceDistance(avoid), detectionDistance(detect)
+Boid::Boid()
+	: position(vec3()), velocity(vec3()), acceleration(vec3()), maxAcceleration(5.0f), dragEffect(0.0f), avoidanceDistance(5.0f), detectionDistance(5.0f)
+{
+}
+
+Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect)
+	: position(pos), velocity(vel), acceleration(vec3()), maxAcceleration(acc), dragEffect(drag), avoidanceDistance(avoid), detectionDistance(detect)
 {
 }
 

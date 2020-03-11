@@ -17,6 +17,7 @@ public:
 	void update(std::vector<Boid>& boids, std::vector<vec3>& obstacle);
 	void simulate(float deltaT);
 
+	Boid();
 	Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect);
 	~Boid();
 };
