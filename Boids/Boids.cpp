@@ -33,7 +33,7 @@ int main()
 	}
 
 	//Loop updates until a key is pressed
-	auto timeCounter = static_cast<float>(clock());
+	clock_t timeCounter = clock();
 	while (true)
 	{
 		for (Boid& boid : boids)

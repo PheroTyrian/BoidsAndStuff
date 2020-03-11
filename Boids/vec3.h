@@ -13,15 +13,15 @@ public:
 	float dot(const vec3& other) const;
 	vec3 unit() const;
 
-	inline bool operator==(const vec3& rhs) const;
-	inline bool operator!=(const vec3& rhs) const;
-	inline vec3 operator+(const vec3& rhs) const;
-	inline vec3& operator+=(const vec3& rhs);
-	inline vec3 operator-(const vec3& rhs) const;
-	inline vec3& operator-=(const vec3& rhs);
-	inline vec3 operator*(const vec3& rhs) const;
-	inline vec3 operator*(const float& rhs) const;
-	inline vec3 operator/(const vec3& rhs) const;
-	inline vec3 operator/(const float& rhs) const;
+	bool operator==(const vec3& rhs) const;
+	bool operator!=(const vec3& rhs) const;
+	vec3 operator+(const vec3& rhs) const;
+	vec3& operator+=(const vec3& rhs);
+	vec3 operator-(const vec3& rhs) const;
+	vec3& operator-=(const vec3& rhs);
+	vec3 operator*(const vec3& rhs) const;
+	vec3 operator*(const float& rhs) const;
+	vec3 operator/(const vec3& rhs) const;
+	vec3 operator/(const float& rhs) const;
 };
 
