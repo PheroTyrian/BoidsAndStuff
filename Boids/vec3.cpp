@@ -71,6 +71,14 @@ inline vec3 vec3::operator-(const vec3 & rhs) const
 	return vec3(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z);
 }
 
+inline vec3 & vec3::operator-=(const vec3 & rhs)
+{
+	this->x -= rhs.x;
+	this->y -= rhs.y;
+	this->z -= rhs.z;
+	return *this;
+}
+
 inline vec3 vec3::operator*(const vec3 & rhs) const
 {
 	return vec3(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z);

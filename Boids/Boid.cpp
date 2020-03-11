@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Boid.h"
 #include <cmath>
+#include <random>
 
 //Adds a vector to another, capping the length of the second such that the result's length is 1 or less
 void accumulate(vec3& acc, vec3 add)
@@ -65,18 +66,40 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 		}
 	}
 	sumPos = sumPos.unit();
-	//Clear acceleration accumulator
-	acceleration = vec3();
+
 	//Collision avoidance
 	vec3 collision = collisionAvoidance(obstacles, position, avoidanceDistance);
+
 	//Match velocity with flock
 	sumVel = sumVel.unit();
 	vec3 matchVel = (sumVel - velocity) / maxAcceleration;
+
 	//Move toward flock centre
+	sumPos = sumPos.unit();
+	vec3 matchPos = (sumPos - position) / detectionDistance;
+
+	//Random acceleration
+	vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, rand() % 21 - 10);
+	randmotion = randmotion.unit();
 
 	//Accumulate
-	//Random acceleration
-	//Accumulate
+	acceleration = collision;
+	accumulate(acceleration, matchVel);
+	accumulate(acceleration, matchPos);
+	accumulate(acceleration, randmotion);
+}
+
+void Boid::simulate(float deltaT)
+{
+	velocity += acceleration * maxAcceleration * deltaT;
+	//Temp code capping velocity in place of drag
+	float magnitude = std::min(velocity.mag(), 5.0f);
+	velocity = velocity.unit() * magnitude;
+
+	position += velocity * deltaT;
+	//Temp code wrapping positions
+	if (position.x > 100.0f)
+		position.x += -200.0f;
 }
 
 Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect) 

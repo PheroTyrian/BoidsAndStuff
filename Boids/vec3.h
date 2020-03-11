@@ -18,6 +18,7 @@ public:
 	inline vec3 operator+(const vec3& rhs) const;
 	inline vec3& operator+=(const vec3& rhs);
 	inline vec3 operator-(const vec3& rhs) const;
+	inline vec3& operator-=(const vec3& rhs);
 	inline vec3 operator*(const vec3& rhs) const;
 	inline vec3 operator*(const float& rhs) const;
 	inline vec3 operator/(const vec3& rhs) const;
