@@ -99,7 +99,18 @@ void Boid::simulate(float deltaT)
 	position += velocity * deltaT;
 	//Temp code wrapping positions
 	if (position.x > 100.0f)
-		position.x += -200.0f;
+		position.x -= 200.0f;
+	if (position.y > 100.0f)
+		position.y -= 200.0f;
+	if (position.z > 100.0f)
+		position.z -= 200.0f;
+
+	if (position.x < -100.0f)
+		position.x += 200.0f;
+	if (position.y < -100.0f)
+		position.y += 200.0f;
+	if (position.z < -100.0f)
+		position.z += 200.0f;
 }
 
 Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect) 
