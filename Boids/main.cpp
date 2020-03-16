@@ -3,7 +3,7 @@
 #include <iostream>
 #include <random>
 #include <vector>
-#include "time.h"
+#include <ctime>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -13,7 +13,7 @@ constexpr int numObst = 40;
 int main()
 {
 	//Basic setup
-	srand(time(NULL));
+	std::srand(std::time(NULL));
 	
 	// Initialize the library
 	if (!glfwInit())
@@ -58,6 +58,7 @@ int main()
 		0.0f, 0.5f,
 		0.5f, -0.5f,
 	};
+
 	GLuint buffer;
 	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
