@@ -170,13 +170,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Boid.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="vec3.h" />
+    <ClInclude Include="VertexArray.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Boid.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="vec3.cpp" />
+    <ClCompile Include="VertexArray.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shader.shader" />

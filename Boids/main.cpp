@@ -1,5 +1,7 @@
 #include "vec3.h"
 #include "Boid.h"
+#include "Renderer.h"
+#include "VertexArray.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -7,33 +9,10 @@
 #include <random>
 #include <vector>
 #include <ctime>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
-#define ASSERT(x) if (!(x)) __debugbreak();
-#define GLCall(x) GLClearError();\
-	x;\
-	ASSERT(GLLogCall(#x, __FILE__, __LINE__))
 
 constexpr int numBoids = 100;
 constexpr int numObst = 40;
-
-static void GLClearError()
-{
-	while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLLogCall(const char* function, const char* file, int line)
-{
-	bool returnVal = true;
-	while (GLenum error = glGetError())
-	{
-		std::cout << "[OpenGL Error] (" << error << ") line " << line 
-			<< ": " << function << " in "<< file <<std::endl;
-		returnVal = false;
-	}
-	return returnVal;
-}
 
 struct shaderProgramSource
 {
@@ -157,85 +136,79 @@ int main()
 		obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, (rand() % 201) - 100);
 	}
 
-	//Temp declaration of verteces
-	float positions[8] = {
-		-0.5f, -0.5f,
-		0.5f, -0.5f,
-		0.5f, 0.5f,
-		-0.5f, 0.5f,
-	};
-
-	unsigned int indices[6] = {
-		0, 1, 2, 
-		2, 3, 0
-	};
-
-	//Binding vertex array object to vertex buffer
-	unsigned int vao;
-	GLCall(glGenVertexArrays(1, &vao));
-	GLCall(glBindVertexArray(vao));
-
-	GLuint buffer;
-	GLCall(glGenBuffers(1, &buffer));
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, buffer));
-	GLCall(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW));
-
-	GLCall(glEnableVertexAttribArray(0));
-	GLCall(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0));
-
-	GLuint ibo;
-	GLCall(glGenBuffers(1, &ibo));
-	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
-	GLCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
-
-	//Compiling shaders and switching openGL over to using them
-	shaderProgramSource source = parseShader("Shader.shader");
-
-	unsigned int shader = createShader(source.vertexSource, source.fragmentSource);
-	GLCall(glUseProgram(shader));
-
-	//Uniforms
-	GLCall(int location = glGetUniformLocation(shader, "u_Colour"));
-	ASSERT(location != -1);
-	GLCall(glUniform4f(location, 0.2f, 0.3f, 0.4f, 1.0f));
-
-	//Unbinding everything
-	GLCall(glUseProgram(0));
-	GLCall(glBindVertexArray(0));
-	GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-	GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
-
-	//Loop updates until the window is closed
-	clock_t timeCounter = clock();
-	while (!glfwWindowShouldClose(window))
 	{
-		for (Boid& boid : boids)
-		{
-			boid.update(boids, obstacles);
-		}
-		float deltaT = static_cast<float>((clock() - timeCounter) / CLOCKS_PER_SEC);
-		timeCounter = clock();
-		for (Boid& boid : boids)
-		{
-			boid.simulate(deltaT);
-		}
+		//Temp declaration of verteces
+		float positions[8] = {
+			-0.5f, -0.5f,
+			0.5f, -0.5f,
+			0.5f, 0.5f,
+			-0.5f, 0.5f,
+		};
 
-		// render
-		GLCall(glClear(GL_COLOR_BUFFER_BIT));
+		unsigned int indices[6] = {
+			0, 1, 2,
+			2, 3, 0
+		};
 
+		//Binding vertex array object to vertex buffer
+		VertexArray vao;
+		VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+		VertexBufferLayout layout;
+		layout.push<float>(2);
+		vao.addBuffer(vb, layout);
+
+		IndexBuffer ib(indices, 6);
+
+		//Compiling shaders and switching openGL over to using them
+		shaderProgramSource source = parseShader("Shader.shader");
+
+		unsigned int shader = createShader(source.vertexSource, source.fragmentSource);
 		GLCall(glUseProgram(shader));
+
+		//Uniforms
+		GLCall(int location = glGetUniformLocation(shader, "u_Colour"));
+		ASSERT(location != -1);
 		GLCall(glUniform4f(location, 0.2f, 0.3f, 0.4f, 1.0f));
 
-		GLCall(glBindVertexArray(vao));
-		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+		//Unbinding everything
+		GLCall(glUseProgram(0));
+		GLCall(glBindVertexArray(0));
+		GLCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+		GLCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
 
-		GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+		//Loop updates until the window is closed
+		clock_t timeCounter = clock();
+		while (!glfwWindowShouldClose(window))
+		{
+			for (Boid& boid : boids)
+			{
+				boid.update(boids, obstacles);
+			}
+			float deltaT = static_cast<float>((clock() - timeCounter) / CLOCKS_PER_SEC);
+			timeCounter = clock();
+			for (Boid& boid : boids)
+			{
+				boid.simulate(deltaT);
+			}
 
-		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-		GLCall(glfwSwapBuffers(window));
-		GLCall(glfwPollEvents());
+			// render
+			GLCall(glClear(GL_COLOR_BUFFER_BIT));
+
+			GLCall(glUseProgram(shader));
+			GLCall(glUniform4f(location, 0.2f, 0.3f, 0.4f, 1.0f));
+
+			vao.bind();
+			ib.bind();
+
+			GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+			// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+			GLCall(glfwSwapBuffers(window));
+			GLCall(glfwPollEvents());
+		}
+
+		GLCall(glDeleteProgram(shader));
 	}
 
-	GLCall(glDeleteProgram(shader));
 	glfwTerminate();
 }
