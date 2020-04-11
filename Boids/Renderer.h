@@ -10,22 +10,12 @@
 	x;\
 	ASSERT(GLLogCall(#x, __FILE__, __LINE__))
 
-static void GLClearError()
-{
-	while (glGetError() != GL_NO_ERROR);
-}
+void GLClearError();
 
-static bool GLLogCall(const char* function, const char* file, int line)
-{
-	bool returnVal = true;
-	while (GLenum error = glGetError())
-	{
-		std::cout << "[OpenGL Error] (" << error << ") line " << line
-			<< ": " << function << " in " << file << std::endl;
-		returnVal = false;
-	}
-	return returnVal;
-}
+bool GLLogCall(const char* function, const char* file, int line);
+
+class Shader;
+class VertexArray;
 
 class VertexBuffer
 {
@@ -59,5 +49,7 @@ class Renderer
 public:
 	Renderer();
 	~Renderer();
+
+	void draw(const VertexArray& vao, const IndexBuffer& ib, const Shader& shader) const;
 };
 

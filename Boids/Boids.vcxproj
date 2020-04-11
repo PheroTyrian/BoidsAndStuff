@@ -171,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="Boid.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="vec3.h" />
     <ClInclude Include="VertexArray.h" />
   </ItemGroup>
@@ -179,6 +180,7 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="vec3.cpp" />
     <ClCompile Include="VertexArray.cpp" />
   </ItemGroup>

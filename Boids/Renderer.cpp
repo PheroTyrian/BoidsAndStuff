@@ -1,4 +1,23 @@
 #include "Renderer.h"
+#include "Shader.h"
+#include "VertexArray.h"
+
+void GLClearError()
+{
+	while (glGetError() != GL_NO_ERROR);
+}
+
+bool GLLogCall(const char* function, const char* file, int line)
+{
+	bool returnVal = true;
+	while (GLenum error = glGetError())
+	{
+		std::cout << "[OpenGL Error] (" << error << ") line " << line
+			<< ": " << function << " in " << file << std::endl;
+		returnVal = false;
+	}
+	return returnVal;
+}
 
 //VERTEX BUFFER ---------------------------------------------------
 
@@ -58,4 +77,12 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+}
+
+void Renderer::draw(const VertexArray & vao, const IndexBuffer & ib, const Shader & shader) const
+{
+	shader.bind();
+	vao.bind();
+	ib.bind();
+	GLCall(glDrawElements(GL_TRIANGLES, ib.getCount(), GL_UNSIGNED_INT, nullptr));
 }
