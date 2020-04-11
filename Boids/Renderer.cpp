@@ -79,6 +79,11 @@ Renderer::~Renderer()
 {
 }
 
+void Renderer::clear() const
+{
+	GLCall(glClear(GL_COLOR_BUFFER_BIT));
+}
+
 void Renderer::draw(const VertexArray & vao, const IndexBuffer & ib, const Shader & shader) const
 {
 	shader.bind();

@@ -115,7 +115,7 @@ int main()
 			}
 
 			// render
-			GLCall(glClear(GL_COLOR_BUFFER_BIT));
+			renderer.clear();
 
 			shader.bind();
 			shader.setUniform4f("u_Colour", 0.2f, 0.3f, 0.4f, 1.0f);

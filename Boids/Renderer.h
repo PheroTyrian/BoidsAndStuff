@@ -50,6 +50,7 @@ public:
 	Renderer();
 	~Renderer();
 
+	void clear() const;
 	void draw(const VertexArray& vao, const IndexBuffer& ib, const Shader& shader) const;
 };
 
