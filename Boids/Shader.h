@@ -22,6 +22,7 @@ public:
 	void bind() const;
 	void unbind() const;
 
+	void setUniform1i(const std::string& name, int val);
 	void setUniform1f(const std::string& name, float val);
 	void setUniform4f(const std::string& name, float a, float b, float c, float d);
 	void setUniform4f(const std::string& name, float* data);

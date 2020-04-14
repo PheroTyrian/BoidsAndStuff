@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
 #include <iostream>
 #include <string>
 #include <random>
@@ -64,10 +65,10 @@ int main()
 	{
 		//Temp declaration of verteces
 		float positions[8] = {
-			-0.5f, -0.5f,
-			0.5f, -0.5f,
-			0.5f, 0.5f,
-			-0.5f, 0.5f,
+			-0.5f, -0.5f, 0.0f, 0.0f,
+			0.5f, -0.5f, 1.0f, 1.0f,
+			0.5f, 0.5f, 1.0f, 1.0f,
+			-0.5f, 0.5f, 0.0f, 1.0f
 		};
 
 		unsigned int indices[6] = {
@@ -77,8 +78,9 @@ int main()
 
 		//Binding vertex array object to vertex buffer
 		VertexArray vao;
-		VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+		VertexBuffer vb(positions, 4 * 4 * sizeof(float));
 		VertexBufferLayout layout;
+		layout.push<float>(2);
 		layout.push<float>(2);
 		vao.addBuffer(vb, layout);
 
@@ -88,6 +90,11 @@ int main()
 		Shader shader("Shader.shader");
 		shader.bind();
 
+		//Fetching a texture
+		Texture texture("image1.png");
+		texture.bind(0);
+		shader.setUniform1i("u_texture", 0);
+
 		//Uniforms
 		shader.setUniform4f("u_Colour", 0.2f, 0.3f, 0.4f, 1.0f);
 
@@ -96,6 +103,7 @@ int main()
 		vb.unbind();
 		ib.unbind();
 		shader.unbind();
+		texture.unbind();
 
 		Renderer renderer;
 
