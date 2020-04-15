@@ -4,11 +4,15 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "Texture.h"
+
 #include <iostream>
 #include <string>
 #include <random>
 #include <vector>
 #include <ctime>
+
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 
 constexpr int numBoids = 100;
@@ -90,6 +94,10 @@ int main()
 
 		IndexBuffer ib(indices, 6);
 
+		//Matrices
+		//Order: left, right, bottom, top, near, far
+		glm::mat4 projection = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+
 		//Compiling shaders and switching openGL over to using them
 		Shader shader("Shader.shader");
 		shader.bind();
@@ -98,6 +106,7 @@ int main()
 		Texture texture("Catpiler.png");
 		texture.bind(0);
 		shader.setUniform1i("u_texture", 0);
+		shader.setUniformMat4f("u_modelViewProjection", projection);
 
 		//Uniforms
 		shader.setUniform4f("u_colour", 0.2f, 0.3f, 0.4f, 1.0f);
@@ -133,6 +142,7 @@ int main()
 			shader.setUniform4f("u_colour", 0.2f, 0.3f, 0.4f, 1.0f);
 			texture.bind(0);
 			shader.setUniform1i("u_texture", 0);
+			shader.setUniformMat4f("u_modelVieWProjection", projection);
 
 			renderer.draw(vao, ib, shader);
 
