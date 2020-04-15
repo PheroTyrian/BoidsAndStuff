@@ -29,7 +29,7 @@ int main()
 
 	// Create a windowed mode window and its OpenGL context
 	GLFWwindow* window;
-	window = glfwCreateWindow(480, 480, "Boids", NULL, NULL);
+	window = glfwCreateWindow(640, 480, "Boids", NULL, NULL);
 	if (!window)
 	{
 		std::cout << "Oof no window" << std::endl;
@@ -75,7 +75,8 @@ int main()
 			0, 1, 2,
 			2, 3, 0
 		};
-
+		
+		//Enable blending
 		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 		GLCall(glEnable(GL_BLEND));
 
