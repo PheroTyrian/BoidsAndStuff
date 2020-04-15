@@ -27,7 +27,7 @@ public:
 	void setUniform4f(const std::string& name, float a, float b, float c, float d);
 	void setUniform4f(const std::string& name, float* data);
 private:
-	unsigned int getUniformLocation(const std::string& name);
+	int getUniformLocation(const std::string& name);
 	ShaderProgramSource parseShader(const std::string& path);
 	unsigned int compileShader(unsigned int type, const std::string& source);
 	unsigned int createShader(const std::string& vertexShader, const std::string& fragmentShader);

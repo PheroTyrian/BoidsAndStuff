@@ -64,9 +64,9 @@ int main()
 
 	{
 		//Temp declaration of verteces
-		float positions[8] = {
+		float positions[16] = {
 			-0.5f, -0.5f, 0.0f, 0.0f,
-			0.5f, -0.5f, 1.0f, 1.0f,
+			0.5f, -0.5f, 1.0f, 0.0f,
 			0.5f, 0.5f, 1.0f, 1.0f,
 			-0.5f, 0.5f, 0.0f, 1.0f
 		};
@@ -91,12 +91,12 @@ int main()
 		shader.bind();
 
 		//Fetching a texture
-		Texture texture("image1.png");
+		Texture texture("Catpiler.png");
 		texture.bind(0);
 		shader.setUniform1i("u_texture", 0);
 
 		//Uniforms
-		shader.setUniform4f("u_Colour", 0.2f, 0.3f, 0.4f, 1.0f);
+		shader.setUniform4f("u_colour", 0.2f, 0.3f, 0.4f, 1.0f);
 
 		//Unbinding everything
 		vao.unbind();
@@ -126,7 +126,9 @@ int main()
 			renderer.clear();
 
 			shader.bind();
-			shader.setUniform4f("u_Colour", 0.2f, 0.3f, 0.4f, 1.0f);
+			shader.setUniform4f("u_colour", 0.2f, 0.3f, 0.4f, 1.0f);
+			texture.bind(0);
+			shader.setUniform1i("u_texture", 0);
 
 			renderer.draw(vao, ib, shader);
 
