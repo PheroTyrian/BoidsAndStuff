@@ -10,7 +10,7 @@ uniform mat4 u_modelViewProjection;
 
 void main()
 {
-	gl_Position = u_modelViewProjection * position;
+	gl_Position = (u_modelViewProjection) * position;
 	v_texCoord = texCoord;
 };
 
@@ -21,11 +21,10 @@ layout(location = 0) out vec4 colour;
 
 in vec2 v_texCoord;
 
-uniform vec4 u_colour;
 uniform sampler2D u_texture;
 
 void main()
 {
 	vec4 texColour = texture(u_texture, v_texCoord);
-	colour = texColour * u_colour;
+	colour = texColour;
 };
