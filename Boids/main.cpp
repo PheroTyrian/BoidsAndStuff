@@ -14,10 +14,10 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw_gl3.cpp"
+#include "imgui/imgui_impl_glfw_gl3.h"
 
-constexpr int screenWidth = 640;
-constexpr int screenHeight = 480;
+constexpr int screenWidth = 1200;
+constexpr int screenHeight = 800;
 
 constexpr int numBoids = 100;
 constexpr int numObst = 40;
@@ -57,8 +57,8 @@ int main()
 	boids.reserve(numBoids);
 	for (int i = 0; i < numBoids; i++)
 	{
-		vec3 pos = vec3((rand() % 201) - 100, (rand() % 201) - 100, (rand() % 201) - 100);
-		vec3 vel = vec3((rand() % 7) - 3, (rand() % 7) - 3, (rand() % 7) - 3);
+		vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, (float)(rand() % 201) - 100);
+		vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, (float)(rand() % 7) - 3);
 		boids.emplace_back(pos, vel, 5.0f, 0.0f, 5.0f, 5.0f);
 	}
 
