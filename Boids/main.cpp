@@ -73,10 +73,10 @@ int main()
 	{
 		//Temp declaration of verteces
 		float positions[16] = {
-			50.0f, 50.0f, 0.0f, 0.0f,
-			400.0f, 50.0f, 1.0f, 0.0f,
-			400.0f, 400.0f, 1.0f, 1.0f,
-			50.0f, 400.0f, 0.0f, 1.0f
+			0.0f, 0.0f, 0.0f, 0.0f,
+			300.0f, 0.0f, 1.0f, 0.0f,
+			300.0f, 300.0f, 1.0f, 1.0f,
+			0.0f, 300.0f, 0.0f, 1.0f
 		};
 
 		unsigned int indices[6] = {
@@ -102,11 +102,9 @@ int main()
 		//due to column first ordering MVP is multiplied in reverse: P * V * M
 		//Order: left, right, bottom, top, near, far
 		glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight, -1.0f, 1.0f);
-		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(100.0f, 0.0f, 0.0f));
-		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(100.0f, 0.0f, 0.0f));
+		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 		glm::mat4 viewProjection = projection * view;
-		glm::mat4 modelViewProjection = viewProjection * model;
 
 		//Compiling shaders and switching openGL over to using them
 		Shader shader("Shader.shader");
@@ -119,7 +117,7 @@ int main()
 		//Uniforms
 		shader.setUniform1i("u_texture", 0);
 
-		shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
+		//shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
 
 		//Unbinding everything
 		vao.unbind();
@@ -134,9 +132,9 @@ int main()
 		ImGui_ImplGlfwGL3_Init(window, true);
 		ImGui::StyleColorsDark();
 
-		bool show_demo_window = true;
-		bool show_another_window = false;
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+		glm::vec3 translation = glm::vec3(100.0f, 0.0f, 0.0f);
 
 		//Loop updates until the window is closed
 		clock_t timeCounter = clock();
@@ -157,6 +155,9 @@ int main()
 			}
 			
 			// render
+			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+			glm::mat4 modelViewProjection = viewProjection * model;
+
 			shader.bind();
 			texture.bind(0);
 			shader.setUniform1i("u_texture", 0);
@@ -164,20 +165,21 @@ int main()
 
 			renderer.draw(vao, ib, shader);
 
+			//Imgui
 			{
-				static float f = 0.0f;
 				static int counter = 0;
-				ImGui::Text("Hello, world!");                           // Display some text (you can use a format string too)
-				ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f    
-				ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+				//ImGui::Text("Hello, world!");
+				ImGui::SliderFloat("Translation", &translation.x, 0.0f, screenWidth);
+				ImGui::SliderFloat("", &translation.y, 0.0f, screenHeight);
+				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-				ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
-				ImGui::Checkbox("Another Window", &show_another_window);
+				//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
+				//ImGui::Checkbox("Another Window", &show_another_window);
 
-				if (ImGui::Button("Button"))                            // Buttons return true when clicked (NB: most widgets return true when edited/activated)
+				if (ImGui::Button("Counter"))
 					counter++;
 				ImGui::SameLine();
-				ImGui::Text("counter = %d", counter);
+				ImGui::Text("= %d", counter);
 
 				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			}

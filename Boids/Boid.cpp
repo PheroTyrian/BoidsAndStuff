@@ -2,6 +2,16 @@
 #include <cmath>
 #include <random>
 
+Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex)
+	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(acc), m_dragEffect(drag), 
+	m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex)
+{
+}
+
+Boid::~Boid()
+{
+}
+
 //Adds a vector to another, capping the length of the second such that the result's length is 1 or less
 void accumulate(vec3& acc, vec3 add)
 {
@@ -54,74 +64,60 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	for (Boid& boid : boids)
 	{
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
-		vec3 diff = position - boid.position;
-		if (diff.square() < detectionDistance)
+		vec3 diff = m_position - boid.m_position;
+		if (diff.square() < m_detectionDistance)
 		{
 			if (diff == vec3())
 				continue;
 
-			sumPos += boid.position;
-			sumVel += boid.velocity;
+			sumPos += boid.m_position;
+			sumVel += boid.m_velocity;
 		}
 	}
 	sumPos = sumPos.unit();
 
 	//Collision avoidance
-	vec3 collision = collisionAvoidance(obstacles, position, avoidanceDistance);
+	vec3 collision = collisionAvoidance(obstacles, m_position, m_avoidanceDistance);
 
 	//Match velocity with flock
 	sumVel = sumVel.unit();
-	vec3 matchVel = (sumVel - velocity) / maxAcceleration;
+	vec3 matchVel = (sumVel - m_velocity) / m_maxAcceleration;
 
 	//Move toward flock centre
 	sumPos = sumPos.unit();
-	vec3 matchPos = (sumPos - position) / detectionDistance;
+	vec3 matchPos = (sumPos - m_position) / m_detectionDistance;
 
 	//Random acceleration
 	vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, rand() % 21 - 10);
 	randmotion = randmotion.unit();
 
 	//Accumulate
-	acceleration = collision;
-	accumulate(acceleration, matchVel);
-	accumulate(acceleration, matchPos);
-	accumulate(acceleration, randmotion);
+	m_acceleration = collision;
+	accumulate(m_acceleration, matchVel);
+	accumulate(m_acceleration, matchPos);
+	accumulate(m_acceleration, randmotion);
 }
 
 void Boid::simulate(float deltaT)
 {
-	velocity += acceleration * maxAcceleration * deltaT;
+	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
 	//Temp code capping velocity in place of drag
-	float magnitude = std::min(velocity.mag(), 5.0f);
-	velocity = velocity.unit() * magnitude;
+	float magnitude = std::min(m_velocity.mag(), 5.0f);
+	m_velocity = m_velocity.unit() * magnitude;
 
-	position += velocity * deltaT;
+	m_position += m_velocity * deltaT;
 	//Temp code wrapping positions
-	if (position.x > 100.0f)
-		position.x -= 200.0f;
-	if (position.y > 100.0f)
-		position.y -= 200.0f;
-	if (position.z > 100.0f)
-		position.z -= 200.0f;
+	if (m_position.x > 100.0f)
+		m_position.x -= 200.0f;
+	if (m_position.y > 100.0f)
+		m_position.y -= 200.0f;
+	if (m_position.z > 100.0f)
+		m_position.z -= 200.0f;
 
-	if (position.x < -100.0f)
-		position.x += 200.0f;
-	if (position.y < -100.0f)
-		position.y += 200.0f;
-	if (position.z < -100.0f)
-		position.z += 200.0f;
-}
-
-Boid::Boid()
-	: position(vec3()), velocity(vec3()), acceleration(vec3()), maxAcceleration(5.0f), dragEffect(0.0f), avoidanceDistance(5.0f), detectionDistance(5.0f)
-{
-}
-
-Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect)
-	: position(pos), velocity(vel), acceleration(vec3()), maxAcceleration(acc), dragEffect(drag), avoidanceDistance(avoid), detectionDistance(detect)
-{
-}
-
-Boid::~Boid()
-{
+	if (m_position.x < -100.0f)
+		m_position.x += 200.0f;
+	if (m_position.y < -100.0f)
+		m_position.y += 200.0f;
+	if (m_position.z < -100.0f)
+		m_position.z += 200.0f;
 }
