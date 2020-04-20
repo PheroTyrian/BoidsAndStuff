@@ -52,31 +52,13 @@ int main()
 		return -1;
 	}
 
-    //Create a set of boids
-	std::vector<Boid> boids;
-	boids.reserve(numBoids);
-	for (int i = 0; i < numBoids; i++)
-	{
-		vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, (float)(rand() % 201) - 100);
-		vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, (float)(rand() % 7) - 3);
-		boids.emplace_back(pos, vel, 5.0f, 0.0f, 5.0f, 5.0f);
-	}
-
-	//Create a set of obstacles
-	std::vector<vec3> obstacles;
-	obstacles.reserve(numObst);
-	for (int i = 0; i < numObst; i++)
-	{
-		obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, (rand() % 201) - 100);
-	}
-
 	{
 		//Temp declaration of verteces
 		float positions[16] = {
 			0.0f, 0.0f, 0.0f, 0.0f,
-			300.0f, 0.0f, 1.0f, 0.0f,
-			300.0f, 300.0f, 1.0f, 1.0f,
-			0.0f, 300.0f, 0.0f, 1.0f
+			3.0f, 0.0f, 1.0f, 0.0f,
+			3.0f, 3.0f, 1.0f, 1.0f,
+			0.0f, 3.0f, 0.0f, 1.0f
 		};
 
 		unsigned int indices[6] = {
@@ -101,10 +83,7 @@ int main()
 		//Matrices
 		//due to column first ordering MVP is multiplied in reverse: P * V * M
 		//Order: left, right, bottom, top, near, far
-		glm::mat4 projection = glm::ortho(0.0f, (float)screenWidth, 0.0f, (float)screenHeight, -1.0f, 1.0f);
-		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-
-		glm::mat4 viewProjection = projection * view;
+		glm::mat4 projection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f);
 
 		//Compiling shaders and switching openGL over to using them
 		Shader shader("Shader.shader");
@@ -134,7 +113,25 @@ int main()
 
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-		glm::vec3 translation = glm::vec3(100.0f, 0.0f, 0.0f);
+		glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
+
+		//Create a set of boids
+		std::vector<Boid> boids;
+		boids.reserve(numBoids);
+		for (int i = 0; i < numBoids; i++)
+		{
+			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, (float)(rand() % 201) - 100);
+			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, (float)(rand() % 7) - 3);
+			boids.emplace_back(pos, vel, 5.0f, 0.0f, 5.0f, 5.0f, vao, ib, texture, shader);
+		}
+
+		//Create a set of obstacles
+		std::vector<vec3> obstacles;
+		obstacles.reserve(numObst);
+		for (int i = 0; i < numObst; i++)
+		{
+			obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, (rand() % 201) - 100);
+		}
 
 		//Loop updates until the window is closed
 		clock_t timeCounter = clock();
@@ -142,6 +139,9 @@ int main()
 		{
 			renderer.clear();
 			ImGui_ImplGlfwGL3_NewFrame();
+
+			glm::mat4 view = glm::translate(glm::mat4(1.0f), translation);
+			glm::mat4 viewProjection = projection * view;
 
 			for (Boid& boid : boids)
 			{
@@ -152,10 +152,11 @@ int main()
 			for (Boid& boid : boids)
 			{
 				boid.simulate(deltaT);
+				boid.draw(renderer, viewProjection);
 			}
 			
 			// render
-			glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+			/*glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
 			glm::mat4 modelViewProjection = viewProjection * model;
 
 			shader.bind();
@@ -163,14 +164,15 @@ int main()
 			shader.setUniform1i("u_texture", 0);
 			shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
 
-			renderer.draw(vao, ib, shader);
+			renderer.draw(vao, ib, shader);*/
 
 			//Imgui
 			{
 				static int counter = 0;
 				//ImGui::Text("Hello, world!");
-				ImGui::SliderFloat("Translation", &translation.x, 0.0f, screenWidth);
-				ImGui::SliderFloat("", &translation.y, 0.0f, screenHeight);
+				ImGui::SliderFloat("X", &translation.x, 100.0f, -100.0f);
+				ImGui::SliderFloat("Y", &translation.y, 100.0f, -100.0f);
+				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
 				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
 				//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state

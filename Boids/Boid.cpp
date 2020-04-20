@@ -1,10 +1,13 @@
 #include "Boid.h"
+#include "Shader.h"
+#include "VertexArray.h"
+#include "glm/gtc/matrix_transform.hpp"
 #include <cmath>
 #include <random>
 
-Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex)
+Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
 	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(acc), m_dragEffect(drag), 
-	m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex)
+	m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
 {
 }
 
@@ -120,4 +123,18 @@ void Boid::simulate(float deltaT)
 		m_position.y += 200.0f;
 	if (m_position.z < -100.0f)
 		m_position.z += 200.0f;
+}
+
+void Boid::draw(Renderer & renderer, glm::mat4 viewProjection)
+{
+	m_shader.bind();
+	m_tex.bind(0);
+
+	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z));
+	glm::mat4 modelViewProjection = viewProjection * model;
+
+	m_shader.setUniform1i("u_texture", 0);
+	m_shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
+
+	renderer.draw(m_vao, m_ib, m_shader);
 }
