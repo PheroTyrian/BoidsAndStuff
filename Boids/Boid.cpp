@@ -5,8 +5,8 @@
 #include <cmath>
 #include <random>
 
-Boid::Boid(vec3 pos, vec3 vel, float acc, float drag, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
-	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(acc), m_dragEffect(drag), 
+Boid::Boid(vec3 pos, vec3 vel, float maxAcc, float drag, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
+	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(maxAcc), m_dragEffect(drag), 
 	m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
 {
 }
@@ -77,27 +77,28 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 			sumVel += boid.m_velocity;
 		}
 	}
-	sumPos = sumPos.unit();
 
 	//Collision avoidance
 	vec3 collision = collisionAvoidance(obstacles, m_position, m_avoidanceDistance);
+	m_acceleration = collision;
 
 	//Match velocity with flock
-	sumVel = sumVel.unit();
-	vec3 matchVel = (sumVel - m_velocity) / m_maxAcceleration;
-
+	if (sumVel != vec3())
+	{
+		sumVel = sumVel.unit();
+		vec3 matchVel = sumVel - m_velocity;
+		accumulate(m_acceleration, matchVel);
+	}
 	//Move toward flock centre
-	sumPos = sumPos.unit();
-	vec3 matchPos = (sumPos - m_position) / m_detectionDistance;
-
+	if (sumPos != vec3())
+	{
+		sumPos = sumPos.unit();
+		vec3 matchPos = (sumPos - m_position) / m_detectionDistance;
+		accumulate(m_acceleration, matchPos);
+	}
 	//Random acceleration
 	vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, rand() % 21 - 10);
 	randmotion = randmotion.unit();
-
-	//Accumulate
-	m_acceleration = collision;
-	accumulate(m_acceleration, matchVel);
-	accumulate(m_acceleration, matchPos);
 	accumulate(m_acceleration, randmotion);
 }
 

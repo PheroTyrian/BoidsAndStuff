@@ -122,7 +122,8 @@ int main()
 		{
 			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, (float)(rand() % 201) - 100);
 			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, (float)(rand() % 7) - 3);
-			boids.emplace_back(pos, vel, 5.0f, 0.0f, 5.0f, 5.0f, vao, ib, texture, shader);
+			//start pos, start velocity, max acceleration, drag, 
+			boids.emplace_back(pos, vel, 0.5f, 0.0f, 5.0f, 10.0f, vao, ib, texture, shader);
 		}
 
 		//Create a set of obstacles
@@ -132,6 +133,12 @@ int main()
 		{
 			obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, (rand() % 201) - 100);
 		}
+
+		float deltaT = 1.0f;
+		float boidAcc = 5.0f;
+		float boidDrag = 0.1f;
+		float boidAvoid = 5.0f;
+		float boidDetect = 10.0f;
 
 		//Loop updates until the window is closed
 		clock_t timeCounter = clock();
@@ -145,9 +152,15 @@ int main()
 
 			for (Boid& boid : boids)
 			{
+				//Allow for in flight adjustments
+				boid.setMaxAcceleration(boidAcc);
+				boid.setDrag(boidDrag);
+				boid.setAvoidanceDist(boidAvoid);
+				boid.setDetectionDist(boidDetect);
+				//Run boid systems
 				boid.update(boids, obstacles);
 			}
-			float deltaT = static_cast<float>((clock() - timeCounter) / CLOCKS_PER_SEC);
+			//float deltaT = static_cast<float>((clock() - timeCounter) / CLOCKS_PER_SEC);
 			timeCounter = clock();
 			for (Boid& boid : boids)
 			{
@@ -168,20 +181,23 @@ int main()
 
 			//Imgui
 			{
-				static int counter = 0;
-				//ImGui::Text("Hello, world!");
-				ImGui::SliderFloat("X", &translation.x, 100.0f, -100.0f);
-				ImGui::SliderFloat("Y", &translation.y, 100.0f, -100.0f);
+				//static int counter = 0;
+				ImGui::SliderFloat("Simulation speed", &deltaT, 0.0f, 1.0f);
+				ImGui::Text("Boid settings");
+				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.0f, 1.0f);
+				ImGui::SliderFloat("Drag", &boidDrag, 0.0f, 1.0f);
+				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
+				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
 				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
 				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
 				//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
 				//ImGui::Checkbox("Another Window", &show_another_window);
 
-				if (ImGui::Button("Counter"))
-					counter++;
-				ImGui::SameLine();
-				ImGui::Text("= %d", counter);
+				//if (ImGui::Button("Counter"))
+				//	counter++;
+				//ImGui::SameLine();
+				//ImGui::Text("= %d", counter);
 
 				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			}
