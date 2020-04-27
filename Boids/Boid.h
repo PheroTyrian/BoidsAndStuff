@@ -16,6 +16,7 @@ private:
 	float m_homeDist;
 	float m_avoidanceDistance;
 	float m_detectionDistance;
+	float m_damping = true;
 
 	VertexArray& m_vao;
 	IndexBuffer& m_ib;
@@ -31,6 +32,7 @@ public:
 
 	vec3 getPosition() { return m_position; }
 	vec3 getVelocity() { return m_velocity; }
+	void setDamping(bool damp) { m_damping = damp; }
 	void setMaxAcceleration(float newMax) { m_maxAcceleration = newMax; }
 	void setDrag(float newDrag) { m_dragEffect = newDrag; }
 	void setHomeDist(float newDist) { m_homeDist = newDist; }

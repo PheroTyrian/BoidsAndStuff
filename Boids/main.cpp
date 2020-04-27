@@ -140,6 +140,7 @@ int main()
 		float boidHome = 100.0f;
 		float boidAvoid = 5.0f;
 		float boidDetect = 10.0f;
+		bool boidDamping = true;
 
 		//Loop updates until the window is closed
 		clock_t timeCounter = clock();
@@ -159,6 +160,7 @@ int main()
 				boid.setHomeDist(boidHome);
 				boid.setAvoidanceDist(boidAvoid);
 				boid.setDetectionDist(boidDetect);
+				boid.setDamping(boidDamping);
 				//Run boid systems
 				boid.update(boids, obstacles);
 			}
@@ -191,6 +193,7 @@ int main()
 				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
 				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
 				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
+				ImGui::Checkbox("Damping", &boidDamping);
 				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
 				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 

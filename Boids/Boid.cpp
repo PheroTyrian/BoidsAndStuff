@@ -78,6 +78,7 @@ vec3 collisionAvoidance(std::vector<Boid>& boids, vec3 pos, float avoidDist)
 
 void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 {
+	vec3 oldAcceleration = m_acceleration;
 	//Find "flock" data
 	vec3 sumPos = vec3();
 	vec3 sumVel = vec3();
@@ -136,6 +137,10 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 
 	//Continue on current path
 	accumulate(m_acceleration, m_velocity);
+
+	//Damping
+	if (m_damping)
+		m_acceleration = (m_acceleration + oldAcceleration) / 2;
 }
 
 void Boid::simulate(float deltaT)
