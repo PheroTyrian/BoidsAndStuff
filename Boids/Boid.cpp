@@ -5,8 +5,8 @@
 #include <cmath>
 #include <random>
 
-Boid::Boid(vec3 pos, vec3 vel, float maxAcc, float drag, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
-	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(maxAcc), m_dragEffect(drag), 
+Boid::Boid(vec3 pos, vec3 vel, float maxAcc, float drag, float home, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
+	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(maxAcc), m_dragEffect(drag), m_homeDist(home),
 	m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
 {
 }
@@ -47,10 +47,27 @@ vec3 collisionAvoidance(std::vector<vec3>& obstacles, vec3 pos, float avoidDist)
 	vec3 sum = vec3();
 	for (vec3 obj : obstacles)
 	{
-		vec3 diff = obj - pos;
-		if (diff.square() < avoidDist)
+		vec3 diff = pos - obj;
+		if (diff.mag() < avoidDist)
 		{
-			sum = sum + diff.unit();
+			sum += diff - (diff / avoidDist);
+		}
+	}
+	if (sum.mag() > 1)
+		return sum.unit();
+	else
+		return sum;
+}
+
+vec3 collisionAvoidance(std::vector<Boid>& boids, vec3 pos, float avoidDist)
+{
+	vec3 sum = vec3();
+	for (Boid& boid : boids)
+	{
+		vec3 diff = pos - boid.getPosition();
+		if (diff.mag() < avoidDist)
+		{
+			sum += diff - (diff / avoidDist);
 		}
 	}
 	if (sum.mag() > 1)
@@ -67,51 +84,70 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	for (Boid& boid : boids)
 	{
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
-		vec3 diff = m_position - boid.m_position;
-		if (diff.square() < m_detectionDistance)
+		vec3 diff = boid.getPosition() - m_position;
+		if (diff.mag() < m_detectionDistance)
 		{
+			//Don't count self
 			if (diff == vec3())
 				continue;
-
-			sumPos += boid.m_position;
-			sumVel += boid.m_velocity;
+			//Blind behind
+			float sigma = diff.dot(m_velocity) / (diff.mag() * m_velocity.mag());
+			if (std::acos(sigma) > 3.1416 * 0.75)
+				continue;
+			sumPos += boid.getPosition();
+			sumVel += boid.getVelocity();
 		}
 	}
 
 	//Collision avoidance
-	vec3 collision = collisionAvoidance(obstacles, m_position, m_avoidanceDistance);
+	vec3 collision = collisionAvoidance(boids, m_position, m_avoidanceDistance);
 	m_acceleration = collision;
+
+	//Home towards 0, 0
+	vec3 homeVec = vec3() - m_position;
+	if (homeVec.mag() > m_homeDist)
+	{
+		float mult = (homeVec.mag() - m_homeDist) / m_homeDist;
+		accumulate(m_acceleration, homeVec.unit() * mult);
+	}
 
 	//Match velocity with flock
 	if (sumVel != vec3())
 	{
-		sumVel = sumVel.unit();
-		vec3 matchVel = sumVel - m_velocity;
+		if (sumVel.mag() > 1.0f)
+			sumVel = sumVel.unit();
+		vec3 matchVel = (sumVel - m_velocity) * m_maxAcceleration;
 		accumulate(m_acceleration, matchVel);
 	}
+
 	//Move toward flock centre
 	if (sumPos != vec3())
 	{
-		sumPos = sumPos.unit();
-		vec3 matchPos = (sumPos - m_position) / m_detectionDistance;
+		if (sumPos.mag() > 1.0f)
+			sumPos = sumPos.unit();
+		vec3 matchPos = sumPos / m_detectionDistance;
 		accumulate(m_acceleration, matchPos);
 	}
+
 	//Random acceleration
-	vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, rand() % 21 - 10);
+	vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, 0.0f);
 	randmotion = randmotion.unit();
-	accumulate(m_acceleration, randmotion);
+	//accumulate(m_acceleration, randmotion * 0.5f);
+
+	//Continue on current path
+	accumulate(m_acceleration, m_velocity);
 }
 
 void Boid::simulate(float deltaT)
 {
 	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
 	//Temp code capping velocity in place of drag
-	float magnitude = std::min(m_velocity.mag(), 5.0f);
-	m_velocity = m_velocity.unit() * magnitude;
+	float drag = m_velocity.square() * m_dragEffect;
+	m_velocity -= m_velocity * drag * deltaT;
 
 	m_position += m_velocity * deltaT;
 	//Temp code wrapping positions
-	if (m_position.x > 100.0f)
+	/*if (m_position.x > 100.0f)
 		m_position.x -= 200.0f;
 	if (m_position.y > 100.0f)
 		m_position.y -= 200.0f;
@@ -123,7 +159,7 @@ void Boid::simulate(float deltaT)
 	if (m_position.y < -100.0f)
 		m_position.y += 200.0f;
 	if (m_position.z < -100.0f)
-		m_position.z += 200.0f;
+		m_position.z += 200.0f;*/
 }
 
 void Boid::draw(Renderer & renderer, glm::mat4 viewProjection)

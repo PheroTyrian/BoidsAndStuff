@@ -20,7 +20,7 @@ constexpr int screenWidth = 1200;
 constexpr int screenHeight = 800;
 
 constexpr int numBoids = 100;
-constexpr int numObst = 40;
+constexpr int numObst = 0;
 
 int main()
 {
@@ -120,10 +120,10 @@ int main()
 		boids.reserve(numBoids);
 		for (int i = 0; i < numBoids; i++)
 		{
-			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, (float)(rand() % 201) - 100);
-			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, (float)(rand() % 7) - 3);
+			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
+			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
 			//start pos, start velocity, max acceleration, drag, 
-			boids.emplace_back(pos, vel, 0.5f, 0.0f, 5.0f, 10.0f, vao, ib, texture, shader);
+			boids.emplace_back(pos, vel, 0.5f, 0.0f, 100.0f, 5.0f, 10.0f, vao, ib, texture, shader);
 		}
 
 		//Create a set of obstacles
@@ -131,12 +131,13 @@ int main()
 		obstacles.reserve(numObst);
 		for (int i = 0; i < numObst; i++)
 		{
-			obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, (rand() % 201) - 100);
+			obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
 		}
 
 		float deltaT = 1.0f;
-		float boidAcc = 5.0f;
+		float boidAcc = 0.5f;
 		float boidDrag = 0.1f;
+		float boidHome = 100.0f;
 		float boidAvoid = 5.0f;
 		float boidDetect = 10.0f;
 
@@ -155,6 +156,7 @@ int main()
 				//Allow for in flight adjustments
 				boid.setMaxAcceleration(boidAcc);
 				boid.setDrag(boidDrag);
+				boid.setHomeDist(boidHome);
 				boid.setAvoidanceDist(boidAvoid);
 				boid.setDetectionDist(boidDetect);
 				//Run boid systems
@@ -186,6 +188,7 @@ int main()
 				ImGui::Text("Boid settings");
 				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.0f, 1.0f);
 				ImGui::SliderFloat("Drag", &boidDrag, 0.0f, 1.0f);
+				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
 				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
 				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
 				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
