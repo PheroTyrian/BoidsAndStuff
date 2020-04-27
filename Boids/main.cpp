@@ -134,8 +134,9 @@ int main()
 			obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
 		}
 
+		//Setting boid properties (updated each frame)
 		float deltaT = 1.0f;
-		float boidAcc = 0.5f;
+		float boidAcc = 0.1f;
 		float boidDrag = 0.1f;
 		float boidHome = 100.0f;
 		float boidAvoid = 5.0f;
