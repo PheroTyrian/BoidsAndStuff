@@ -130,8 +130,8 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	}
 
 	//Random acceleration
-	vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, 0.0f);
-	randmotion = randmotion.unit();
+	//vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, 0.0f);
+	//randmotion = randmotion.unit();
 	//accumulate(m_acceleration, randmotion * 0.5f);
 
 	//Continue on current path
