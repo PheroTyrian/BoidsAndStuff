@@ -146,7 +146,7 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 void Boid::simulate(float deltaT)
 {
 	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
-	//Temp code capping velocity in place of drag
+	
 	float drag = m_velocity.square() * m_dragEffect;
 	m_velocity -= m_velocity * drag * deltaT;
 
