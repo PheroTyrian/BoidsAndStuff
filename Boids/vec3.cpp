@@ -33,7 +33,8 @@ float vec3::dot(const vec3 & other) const
 vec3 vec3::unit() const
 {
 	float m = mag();
-	if (m != 0.0f)
+
+	if (m != 1.0f && m != 0.0f)
 		return vec3(x / m, y / m, z / m);
 	return vec3(x, y, z);
 }

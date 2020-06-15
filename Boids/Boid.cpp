@@ -5,9 +5,9 @@
 #include <cmath>
 #include <random>
 
-Boid::Boid(vec3 pos, vec3 vel, float maxAcc, float drag, float home, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
-	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(maxAcc), m_dragEffect(drag), m_homeDist(home),
-	m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
+Boid::Boid(vec3 pos, vec3 vel, float maxAcc, float speed, float home, float viewArc, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
+	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(maxAcc), m_maxSpeed(speed), m_homeDist(home),
+	m_viewArc(viewArc), m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
 {
 }
 
@@ -42,91 +42,91 @@ void accumulate(vec3& acc, vec3 add)
 	}
 }
 
-vec3 collisionAvoidance(std::vector<vec3>& obstacles, vec3 pos, float avoidDist)
+void flattenVectortoPlane(vec3& vector, vec3 plane)
 {
-	vec3 sum = vec3();
-	for (vec3 obj : obstacles)
-	{
-		vec3 diff = pos - obj;
-		if (diff.mag() < avoidDist)
-		{
-			sum += diff - (diff / avoidDist);
-		}
-	}
-	if (sum.mag() > 1)
-		return sum.unit();
-	else
-		return sum;
-}
-
-vec3 collisionAvoidance(std::vector<Boid>& boids, vec3 pos, float avoidDist)
-{
-	vec3 sum = vec3();
-	for (Boid& boid : boids)
-	{
-		vec3 diff = pos - boid.getPosition();
-		if (diff.mag() < avoidDist)
-		{
-			sum += diff - (diff / avoidDist);
-		}
-	}
-	if (sum.mag() > 1)
-		return sum.unit();
-	else
-		return sum;
+	plane = plane.unit();
+	vector -= plane * plane.dot(vector);
 }
 
 void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 {
 	vec3 oldAcceleration = m_acceleration;
+	m_acceleration = vec3();
+	vec3 facingDirection = m_velocity.unit();
 	//Find "flock" data
 	vec3 sumPos = vec3();
 	vec3 sumVel = vec3();
+	vec3 sumCol = vec3();
 	for (Boid& boid : boids)
 	{
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
 		vec3 diff = boid.getPosition() - m_position;
-		if (diff.mag() < m_detectionDistance)
+		//Don't count self
+		if (diff == vec3())
+			continue;
+
+		if (diff.square() < m_detectionDistance * m_detectionDistance)
 		{
-			//Don't count self
-			if (diff == vec3())
-				continue;
 			//Blind behind
 			float sigma = diff.dot(m_velocity) / (diff.mag() * m_velocity.mag());
-			if (std::acos(sigma) > 3.1416 * 0.75)
+			if (std::acos(sigma) > 3.1416 * m_viewArc)
 				continue;
-			sumPos += boid.getPosition();
-			sumVel += boid.getVelocity();
+			sumPos += m_position;
+			sumVel += boid.getVelocity() - m_velocity;
+		}
+
+		if (diff.square() < m_avoidanceDistance * m_avoidanceDistance)
+		{
+			float avoidScale = m_avoidanceDistance * m_avoidanceDistance - diff.square();
+			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
+			sumCol -= diff.unit() * avoidScale;
+		}
+	}
+	for (vec3& obstacle : obstacles)
+	{
+		vec3 diff = obstacle - m_position;
+
+		if (diff == vec3())
+			continue;
+
+		if (diff.square() < m_avoidanceDistance * m_avoidanceDistance)
+		{
+			float avoidScale = m_avoidanceDistance * m_avoidanceDistance - diff.square();
+			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
+			sumCol -= diff.unit() * avoidScale;
 		}
 	}
 
 	//Collision avoidance
-	vec3 collision = collisionAvoidance(boids, m_position, m_avoidanceDistance);
-	m_acceleration = collision;
+	if (sumCol != vec3())
+	{
+		float collisionMag = sumCol.mag();
+		vec3 avoidDirection = sumCol - facingDirection.unit() * sumCol.dot(facingDirection.unit());
+		accumulate(m_acceleration, avoidDirection.unit() * collisionMag);
+	}
 
 	//Home towards 0, 0
 	vec3 homeVec = vec3() - m_position;
-	if (homeVec.mag() > m_homeDist)
+	if (homeVec.square() > m_homeDist * m_homeDist)
 	{
 		float mult = (homeVec.mag() - m_homeDist) / m_homeDist;
-		accumulate(m_acceleration, homeVec.unit() * mult);
+		vec3 avoidDirection = homeVec - facingDirection.unit() * homeVec.dot(facingDirection.unit());
+		accumulate(m_acceleration, avoidDirection.unit() * mult);
 	}
 
 	//Match velocity with flock
 	if (sumVel != vec3())
 	{
-		if (sumVel.mag() > 1.0f)
-			sumVel = sumVel.unit();
-		vec3 matchVel = (sumVel - m_velocity) * m_maxAcceleration;
-		accumulate(m_acceleration, matchVel);
+		vec3 matchVel = sumVel / m_maxAcceleration;
+		vec3 avoidDirection = sumVel - facingDirection.unit() * sumVel.dot(facingDirection.unit());
+		accumulate(m_acceleration, avoidDirection);
 	}
 
 	//Move toward flock centre
 	if (sumPos != vec3())
 	{
-		if (sumPos.mag() > 1.0f)
-			sumPos = sumPos.unit();
-		vec3 matchPos = sumPos / m_detectionDistance;
+		vec3 matchPos = sumPos;
+		vec3 avoidDirection = sumPos - facingDirection.unit() * sumPos.dot(facingDirection.unit());
 		accumulate(m_acceleration, matchPos);
 	}
 
@@ -135,22 +135,22 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	//randmotion = randmotion.unit();
 	//accumulate(m_acceleration, randmotion * 0.5f);
 
-	//Continue on current path
-	accumulate(m_acceleration, m_velocity);
-
 	//Damping
 	if (m_damping)
 		m_acceleration = (m_acceleration + oldAcceleration) / 2;
+
+	//Ensure acceleration is perpendicular to velocity
+	m_acceleration = m_acceleration - facingDirection.unit() * m_acceleration.dot(facingDirection.unit());
 }
 
 void Boid::simulate(float deltaT)
 {
 	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
 	
-	float drag = m_velocity.square() * m_dragEffect;
-	m_velocity -= m_velocity * drag * deltaT;
+	m_velocity = m_velocity.unit() * m_maxSpeed;
 
 	m_position += m_velocity * deltaT;
+
 	//Temp code wrapping positions
 	/*if (m_position.x > 100.0f)
 		m_position.x -= 200.0f;
