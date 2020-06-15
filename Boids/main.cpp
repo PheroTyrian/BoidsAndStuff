@@ -123,7 +123,7 @@ int main()
 			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
 			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
 			//start pos, start velocity, max acceleration, drag, 
-			boids.emplace_back(pos, vel, 0.5f, 0.0f, 100.0f, 5.0f, 10.0f, vao, ib, texture, shader);
+			boids.emplace_back(pos, vel, 0.5f, 5.0f, 100.0f, 0.75f, 5.0f, 10.0f, vao, ib, texture, shader);
 		}
 
 		//Create a set of obstacles
@@ -137,7 +137,7 @@ int main()
 		//Setting boid properties (updated each frame)
 		float deltaT = 1.0f;
 		float boidAcc = 0.1f;
-		float boidDrag = 0.1f;
+		float boidSpeed = 10.0f;
 		float boidHome = 100.0f;
 		float boidAvoid = 5.0f;
 		float boidDetect = 10.0f;
@@ -157,7 +157,7 @@ int main()
 			{
 				//Allow for in flight adjustments
 				boid.setMaxAcceleration(boidAcc);
-				boid.setDrag(boidDrag);
+				boid.setSpeed(boidSpeed);
 				boid.setHomeDist(boidHome);
 				boid.setAvoidanceDist(boidAvoid);
 				boid.setDetectionDist(boidDetect);
@@ -189,8 +189,8 @@ int main()
 				//static int counter = 0;
 				ImGui::SliderFloat("Simulation speed", &deltaT, 0.0f, 1.0f);
 				ImGui::Text("Boid settings");
-				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.0f, 1.0f);
-				ImGui::SliderFloat("Drag", &boidDrag, 0.0f, 1.0f);
+				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 1.0f);
+				ImGui::SliderFloat("Max Speed", &boidSpeed, 0.01f, 1.0f);
 				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
 				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
 				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
