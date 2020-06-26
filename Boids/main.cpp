@@ -20,7 +20,7 @@ constexpr int screenWidth = 1200;
 constexpr int screenHeight = 800;
 
 constexpr int numBoids = 100;
-constexpr int numObst = 0;
+constexpr int numObst = 10;
 
 int main()
 {
@@ -137,8 +137,8 @@ int main()
 		//Setting boid properties (updated each frame)
 		float deltaT = 1.0f;
 		float boidAcc = 0.1f;
-		float boidSpeed = 10.0f;
-		float boidHome = 100.0f;
+		float boidSpeed = 1.0f;
+		float boidHome = 60.0f;
 		float boidAvoid = 5.0f;
 		float boidDetect = 10.0f;
 		bool boidDamping = true;
@@ -171,6 +171,17 @@ int main()
 			{
 				boid.simulate(deltaT);
 				boid.draw(renderer, viewProjection);
+			}
+
+			for (vec3 obst : obstacles)
+			{
+				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(obst.x, obst.y, obst.z));
+				glm::mat4 modelViewProjection = viewProjection * model;
+
+				shader.setUniform1i("u_texture", 0);
+				shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
+
+				renderer.draw(vao, ib, shader);
 			}
 			
 			// render
