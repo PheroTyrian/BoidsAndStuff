@@ -172,7 +172,18 @@ void Boid::draw(Renderer & renderer, glm::mat4 viewProjection)
 	m_shader.bind();
 	m_tex.bind(0);
 
-	glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z));
+	//Get the rotation pivot
+	glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 vel = glm::normalize(glm::vec3(m_velocity.x, m_velocity.y, m_velocity.z));
+	glm::vec3 pivot = glm::normalize(glm::cross(worldUp, vel));
+
+	//Get rotation amount
+	float angle = glm::acos(glm::dot(vel, worldUp));
+
+	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), angle, pivot);
+	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z));
+
+	glm::mat4 model = translate * rotate;
 	glm::mat4 modelViewProjection = viewProjection * model;
 
 	m_shader.setUniform1i("u_texture", 0);
