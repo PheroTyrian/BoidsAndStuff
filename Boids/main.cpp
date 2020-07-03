@@ -89,12 +89,9 @@ int main()
 		Shader shader("Shader.shader");
 		shader.bind();
 
-		//Fetching a texture
-		Texture texture("Catpiler.png");
-		texture.bind(0);
-
-		//Uniforms
-		shader.setUniform1i("u_texture", 0);
+		//Fetching textures
+		Texture actorTex("Arrow.png");
+		Texture obstTex("Obstacle.png");
 
 		//shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
 
@@ -103,7 +100,6 @@ int main()
 		vb.unbind();
 		ib.unbind();
 		shader.unbind();
-		texture.unbind();
 
 		Renderer renderer;
 
@@ -123,7 +119,7 @@ int main()
 			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
 			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
 			//start pos, start velocity, max acceleration, drag, 
-			boids.emplace_back(pos, vel, 0.5f, 5.0f, 100.0f, 0.75f, 5.0f, 10.0f, vao, ib, texture, shader);
+			boids.emplace_back(pos, vel, 0.5f, 5.0f, 100.0f, 0.75f, 5.0f, 10.0f, vao, ib, actorTex, shader);
 		}
 
 		//Create a set of obstacles
@@ -178,6 +174,7 @@ int main()
 				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(obst.x, obst.y, obst.z));
 				glm::mat4 modelViewProjection = viewProjection * model;
 
+				obstTex.bind(0);
 				shader.setUniform1i("u_texture", 0);
 				shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
 
