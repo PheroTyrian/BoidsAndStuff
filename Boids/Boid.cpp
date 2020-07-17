@@ -15,6 +15,8 @@ Boid::~Boid()
 {
 }
 
+//Start of removal area
+
 //Adds a vector to another, capping the length of the second such that the result's length is 1 or less
 void accumulate(vec3& acc, vec3 add)
 {
@@ -48,6 +50,53 @@ void flattenVectortoPlane(vec3& vector, vec3 plane)
 	vector -= plane * plane.dot(vector);
 }
 
+void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& sumCollision, const std::vector<Boid>& boids, const Boid& self)
+{
+	for (const Boid& boid : boids)
+	{
+		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
+		vec3 diff = boid.getPosition() - self.getPosition();
+		//Don't count self
+		if (diff == vec3())
+			continue;
+
+		if (diff.square() < self.getDetectionDist() * self.getDetectionDist())
+		{
+			//Blind behind
+			float sigma = diff.dot(self.getVelocity()) / (diff.mag() * self.getVelocity().mag());
+			if (std::acos(sigma) > 3.1416 * self.getViewArc())
+				continue;
+			sumPosition += boid.getPosition();
+			sumVelocity += boid.getVelocity() - self.getVelocity();
+		}
+
+		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
+		{
+			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
+			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
+			sumCollision -= diff.unit() * avoidScale;
+		}
+	}
+}
+
+void obstacleDataCollection(vec3& sumCollision, const std::vector<vec3>& obstacles, const Boid& self)
+{
+	for (const vec3& obstacle : obstacles)
+	{
+		vec3 diff = obstacle - self.getPosition();
+
+		if (diff == vec3())
+			continue;
+
+		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
+		{
+			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
+			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
+			sumCollision -= diff.unit() * avoidScale;
+		}
+	}
+}
+
 void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 {
 	vec3 oldAcceleration = m_acceleration;
@@ -57,45 +106,9 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	vec3 sumPos = vec3();
 	vec3 sumVel = vec3();
 	vec3 sumCol = vec3();
-	for (Boid& boid : boids)
-	{
-		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
-		vec3 diff = boid.getPosition() - m_position;
-		//Don't count self
-		if (diff == vec3())
-			continue;
 
-		if (diff.square() < m_detectionDistance * m_detectionDistance)
-		{
-			//Blind behind
-			float sigma = diff.dot(m_velocity) / (diff.mag() * m_velocity.mag());
-			if (std::acos(sigma) > 3.1416 * m_viewArc)
-				continue;
-			sumPos += m_position;
-			sumVel += boid.getVelocity() - m_velocity;
-		}
-
-		if (diff.square() < m_avoidanceDistance * m_avoidanceDistance)
-		{
-			float avoidScale = m_avoidanceDistance * m_avoidanceDistance - diff.square();
-			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
-			sumCol -= diff.unit() * avoidScale;
-		}
-	}
-	for (vec3& obstacle : obstacles)
-	{
-		vec3 diff = obstacle - m_position;
-
-		if (diff == vec3())
-			continue;
-
-		if (diff.square() < m_avoidanceDistance * m_avoidanceDistance)
-		{
-			float avoidScale = m_avoidanceDistance * m_avoidanceDistance - diff.square();
-			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
-			sumCol -= diff.unit() * avoidScale;
-		}
-	}
+	actorDataCollection(sumPos, sumVel, sumCol, boids, *this);
+	obstacleDataCollection(sumCol, obstacles, *this);
 
 	//Collision avoidance
 	if (sumCol != vec3())
@@ -150,21 +163,6 @@ void Boid::simulate(float deltaT)
 	m_velocity = m_velocity.unit() * m_maxSpeed;
 
 	m_position += m_velocity * deltaT;
-
-	//Temp code wrapping positions
-	/*if (m_position.x > 100.0f)
-		m_position.x -= 200.0f;
-	if (m_position.y > 100.0f)
-		m_position.y -= 200.0f;
-	if (m_position.z > 100.0f)
-		m_position.z -= 200.0f;
-
-	if (m_position.x < -100.0f)
-		m_position.x += 200.0f;
-	if (m_position.y < -100.0f)
-		m_position.y += 200.0f;
-	if (m_position.z < -100.0f)
-		m_position.z += 200.0f;*/
 }
 
 void Boid::draw(Renderer & renderer, glm::mat4 viewProjection)

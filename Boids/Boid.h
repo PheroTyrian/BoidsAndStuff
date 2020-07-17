@@ -11,13 +11,14 @@ private:
 	vec3 m_position;
 	vec3 m_velocity;
 	vec3 m_acceleration;
+
 	float m_maxAcceleration;
 	float m_maxSpeed;
 	float m_homeDist;
 	float m_viewArc;
 	float m_avoidanceDistance;
 	float m_detectionDistance;
-	float m_damping = true;
+	bool m_damping = true;
 
 	VertexArray& m_vao;
 	IndexBuffer& m_ib;
@@ -31,8 +32,17 @@ public:
 	void simulate(float deltaT);
 	void draw(Renderer& renderer, glm::mat4 viewProjection);
 
-	vec3 getPosition() { return m_position; }
-	vec3 getVelocity() { return m_velocity; }
+	vec3 getPosition() const { return m_position; }
+	vec3 getVelocity() const { return m_velocity; }
+	vec3 getAcceleration() const { return m_acceleration; }
+	float getMaxAcceleration() const { return m_maxAcceleration; }
+	float getMaxSpeed() const { return m_maxSpeed; }
+	float getHomeDistance() const { return m_homeDist; }
+	float getViewArc() const { return m_viewArc; }
+	float getAvoidanceDist() const { return m_avoidanceDistance; }
+	float getDetectionDist() const { return m_detectionDistance; }
+	bool getDamping() const { return m_damping; }
+
 	void setDamping(bool damp) { m_damping = damp; }
 	void setMaxAcceleration(float newMax) { m_maxAcceleration = newMax; }
 	void setSpeed(float newSpeed) { m_maxSpeed = newSpeed; }
