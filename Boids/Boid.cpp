@@ -97,11 +97,75 @@ void obstacleDataCollection(vec3& sumCollision, const std::vector<vec3>& obstacl
 	}
 }
 
+void obstacleDataCollection(vec3& sumCollision, const std::vector<vec3>& obstacles, const Boid& self)
+{
+	//Create temp storage of closest obstacle
+	for (const vec3& obstacle : obstacles)
+	{
+		//Scale by facing direction
+		//If outside near movement continue
+		//If closest obstacle set as such and store relative position
+		vec3 diff = obstacle - self.getPosition();
+
+		if (diff == vec3())
+			continue;
+
+		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
+		{
+			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
+			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
+			sumCollision -= diff.unit() * avoidScale;
+		}
+	}
+}
+
+vec3 collisionAvoidance(vec3 sumCollision, vec3 facingDirection)
+{
+	if (sumCollision != vec3())
+	{
+		float collisionMag = sumCollision.mag();
+		vec3 avoidDirection = sumCollision - facingDirection.unit() * sumCollision.dot(facingDirection.unit());
+		return avoidDirection.unit() * collisionMag;
+	}
+	return vec3();
+}
+
+vec3 seekTowards(vec3 position, float homeDist, vec3 facingDirection)
+{
+	vec3 homeVec = vec3() - position;
+	if (homeVec.square() > homeDist * homeDist)
+	{
+		float mult = (homeVec.mag() - homeDist) / homeDist;
+		vec3 avoidDirection = homeVec - facingDirection.unit() * homeVec.dot(facingDirection.unit());
+		return avoidDirection.unit() * mult;
+	}
+	return vec3();
+}
+
+vec3 matchFlockVelocity(vec3 sumVelocity, float maxAcceleration, vec3 facingDirection)
+{
+	if (sumVelocity != vec3())
+	{
+		vec3 matchVel = sumVelocity / maxAcceleration;
+		return sumVelocity - facingDirection.unit() * sumVelocity.dot(facingDirection.unit());
+	}
+}
+
+vec3 matchFlockCentre(vec3 sumPosition, vec3 facingDirection)
+{
+	if (sumPosition != vec3())
+	{
+		vec3 matchPos = sumPosition;
+		return sumPosition - facingDirection.unit() * sumPosition.dot(facingDirection.unit());
+	}
+	return vec3();
+}
+
 void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 {
 	vec3 oldAcceleration = m_acceleration;
 	m_acceleration = vec3();
-	vec3 facingDirection = m_velocity.unit();
+	vec3 facingDir = m_velocity.unit();
 	//Find "flock" data
 	vec3 sumPos = vec3();
 	vec3 sumVel = vec3();
@@ -110,50 +174,25 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	actorDataCollection(sumPos, sumVel, sumCol, boids, *this);
 	obstacleDataCollection(sumCol, obstacles, *this);
 
-	//Collision avoidance
-	if (sumCol != vec3())
-	{
-		float collisionMag = sumCol.mag();
-		vec3 avoidDirection = sumCol - facingDirection.unit() * sumCol.dot(facingDirection.unit());
-		accumulate(m_acceleration, avoidDirection.unit() * collisionMag);
-	}
+	//Accumulating forces
+	accumulate(m_acceleration, 
+		collisionAvoidance(sumCol, facingDir));
 
-	//Home towards 0, 0
-	vec3 homeVec = vec3() - m_position;
-	if (homeVec.square() > m_homeDist * m_homeDist)
-	{
-		float mult = (homeVec.mag() - m_homeDist) / m_homeDist;
-		vec3 avoidDirection = homeVec - facingDirection.unit() * homeVec.dot(facingDirection.unit());
-		accumulate(m_acceleration, avoidDirection.unit() * mult);
-	}
+	accumulate(m_acceleration, 
+		seekTowards(m_position, m_homeDist, facingDir));
+	
+	accumulate(m_acceleration, 
+		matchFlockVelocity(sumVel, m_maxAcceleration, facingDir));
 
-	//Match velocity with flock
-	if (sumVel != vec3())
-	{
-		vec3 matchVel = sumVel / m_maxAcceleration;
-		vec3 avoidDirection = sumVel - facingDirection.unit() * sumVel.dot(facingDirection.unit());
-		accumulate(m_acceleration, avoidDirection);
-	}
-
-	//Move toward flock centre
-	if (sumPos != vec3())
-	{
-		vec3 matchPos = sumPos;
-		vec3 avoidDirection = sumPos - facingDirection.unit() * sumPos.dot(facingDirection.unit());
-		accumulate(m_acceleration, matchPos);
-	}
-
-	//Random acceleration
-	//vec3 randmotion = vec3(rand() % 21 - 10, rand() % 21 - 10, 0.0f);
-	//randmotion = randmotion.unit();
-	//accumulate(m_acceleration, randmotion * 0.5f);
+	accumulate(m_acceleration,
+		matchFlockCentre(sumPos, facingDir));
 
 	//Damping
 	if (m_damping)
 		m_acceleration = (m_acceleration + oldAcceleration) / 2;
 
 	//Ensure acceleration is perpendicular to velocity
-	m_acceleration = m_acceleration - facingDirection.unit() * m_acceleration.dot(facingDirection.unit());
+	m_acceleration = m_acceleration - facingDir.unit() * m_acceleration.dot(facingDir.unit());
 }
 
 void Boid::simulate(float deltaT)

@@ -35,6 +35,7 @@ public:
 	vec3 getPosition() const { return m_position; }
 	vec3 getVelocity() const { return m_velocity; }
 	vec3 getAcceleration() const { return m_acceleration; }
+	vec3& refAcceleration() { return m_acceleration; }
 	float getMaxAcceleration() const { return m_maxAcceleration; }
 	float getMaxSpeed() const { return m_maxSpeed; }
 	float getHomeDistance() const { return m_homeDist; }
