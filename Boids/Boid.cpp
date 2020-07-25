@@ -5,9 +5,9 @@
 #include <cmath>
 #include <random>
 
-Boid::Boid(vec3 pos, vec3 vel, float maxAcc, float speed, float home, float viewArc, float avoid, float detect, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
-	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(maxAcc), m_maxSpeed(speed), m_homeDist(home),
-	m_viewArc(viewArc), m_avoidanceDistance(avoid), m_detectionDistance(detect), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
+Boid::Boid(vec3 pos, vec3 vel, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
+	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(1.0f), m_maxSpeed(10.0f), m_homeDist(100.0f),
+	m_viewArc(0.75f), m_radius(2.0f), m_avoidanceDistance(5.0f), m_detectionDistance(10.0f), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
 {
 }
 
@@ -50,82 +50,119 @@ void flattenVectortoPlane(vec3& vector, vec3 plane)
 	vector -= plane * plane.dot(vector);
 }
 
-void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& sumCollision, const std::vector<Boid>& boids, const Boid& self)
+void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, const std::vector<Boid>& boids, const Boid& self)
 {
+	//Create temp storage of closest collision
+	float closestDistSq = self.getAvoidanceDist() * self.getAvoidanceDist();
+	if (collision != vec3())
+		closestDistSq = collision.square();
+
 	for (const Boid& boid : boids)
 	{
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
 		vec3 diff = boid.getPosition() - self.getPosition();
+
 		//Don't count self
 		if (diff == vec3())
 			continue;
 
+		//Blind behind
+		float sigma = diff.dot(self.getVelocity()) / (diff.mag() * self.getVelocity().mag());
+		if (std::acos(sigma) > 3.1416 * self.getViewArc())
+			continue;
+
+		//Neighbour data
 		if (diff.square() < self.getDetectionDist() * self.getDetectionDist())
 		{
-			//Blind behind
-			float sigma = diff.dot(self.getVelocity()) / (diff.mag() * self.getVelocity().mag());
-			if (std::acos(sigma) > 3.1416 * self.getViewArc())
-				continue;
 			sumPosition += boid.getPosition();
 			sumVelocity += boid.getVelocity() - self.getVelocity();
 		}
 
-		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
-		{
-			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
-			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
-			sumCollision -= diff.unit() * avoidScale;
-		}
-	}
-}
+		//Collision checking
+		//Find position of closest intercept in near future (midpoint between the two closest points bounded between 0 and nearFuture)
+		float nearFuture = self.getAvoidanceDist() / self.getMaxSpeed();
+		float steps = self.getAvoidanceDist() / (self.getRadius() * 0.25f); //Should be based on the radius of the object
 
-void obstacleDataCollection(vec3& sumCollision, const std::vector<vec3>& obstacles, const Boid& self)
-{
-	for (const vec3& obstacle : obstacles)
-	{
-		vec3 diff = obstacle - self.getPosition();
-
-		if (diff == vec3())
+		//Determine if it's close enough to care
+		if (nearFuture * (self.getVelocity().mag() + boid.getVelocity().mag()) > self.getAvoidanceDist())
 			continue;
 
-		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
+		//Check iteratively for collisions
+		for (float t = 0.0f; t <= nearFuture; t += (nearFuture / steps))
 		{
-			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
-			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
-			sumCollision -= diff.unit() * avoidScale;
+			vec3 selfPosition = self.getPosition() + (self.getVelocity() * t);
+			vec3 otherPosition = boid.getPosition() + (boid.getVelocity() * t);
+			float potentialClosest = (otherPosition - self.getPosition()).square();
+			
+			//Move on if this will not provide a closer collision than has already been detected
+			if (potentialClosest > closestDistSq)
+				continue;
+
+			if ((otherPosition - selfPosition).square() <= self.getRadius() * boid.getRadius())
+			{
+				closestDistSq = potentialClosest;
+				//This treats the potential moving collision target as a static object at the intercept
+				collision = otherPosition - self.getPosition();
+			}
 		}
 	}
 }
 
-void obstacleDataCollection(vec3& sumCollision, const std::vector<vec3>& obstacles, const Boid& self)
+//void obstacleDataCollection(vec3& sumCollision, const std::vector<vec3>& obstacles, const Boid& self)
+//{
+//	for (const vec3& obstacle : obstacles)
+//	{
+//		vec3 diff = obstacle - self.getPosition();
+//
+//		if (diff == vec3())
+//			continue;
+//
+//		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
+//		{
+//			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
+//			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
+//			sumCollision -= diff.unit() * avoidScale;
+//		}
+//	}
+//}
+
+void obstacleDataCollection(vec3& collision, vec3 facingDirection, vec3 position, float avoidanceDist, float radius, const std::vector<vec3>& obstacles)
 {
 	//Create temp storage of closest obstacle
+	float closestDistSq = avoidanceDist * avoidanceDist;
+	if (collision != vec3())
+		closestDistSq = collision.square();
+
 	for (const vec3& obstacle : obstacles)
 	{
+		vec3 diff = obstacle - position;
+		
 		//Scale by facing direction
-		//If outside near movement continue
-		//If closest obstacle set as such and store relative position
-		vec3 diff = obstacle - self.getPosition();
+		float distForward = facingDirection.dot(diff);
 
-		if (diff == vec3())
+		//Cull results outside box ends
+		if (distForward <= 0 || distForward > avoidanceDist)
+			continue;
+		
+		//Cull results too far from the sides
+		if ((diff - (facingDirection * distForward)).square() > radius * radius)
 			continue;
 
-		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
+		//If closest obstacle set as such and store relative position
+		if (closestDistSq > diff.square())
 		{
-			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
-			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
-			sumCollision -= diff.unit() * avoidScale;
+			closestDistSq = diff.square();
+			collision = diff;
 		}
 	}
 }
 
-vec3 collisionAvoidance(vec3 sumCollision, vec3 facingDirection)
+vec3 collisionAvoidance(vec3 collision, vec3 facingDirection)
 {
-	if (sumCollision != vec3())
+	if (collision != vec3())
 	{
-		float collisionMag = sumCollision.mag();
-		vec3 avoidDirection = sumCollision - facingDirection.unit() * sumCollision.dot(facingDirection.unit());
-		return avoidDirection.unit() * collisionMag;
+		vec3 avoidDirection = vec3() - (collision - facingDirection * collision.dot(facingDirection));
+		return avoidDirection.unit();
 	}
 	return vec3();
 }
@@ -149,6 +186,7 @@ vec3 matchFlockVelocity(vec3 sumVelocity, float maxAcceleration, vec3 facingDire
 		vec3 matchVel = sumVelocity / maxAcceleration;
 		return sumVelocity - facingDirection.unit() * sumVelocity.dot(facingDirection.unit());
 	}
+	return vec3();
 }
 
 vec3 matchFlockCentre(vec3 sumPosition, vec3 facingDirection)
@@ -161,7 +199,7 @@ vec3 matchFlockCentre(vec3 sumPosition, vec3 facingDirection)
 	return vec3();
 }
 
-void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
+void Boid::steering(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 {
 	vec3 oldAcceleration = m_acceleration;
 	m_acceleration = vec3();
@@ -172,7 +210,7 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	vec3 sumCol = vec3();
 
 	actorDataCollection(sumPos, sumVel, sumCol, boids, *this);
-	obstacleDataCollection(sumCol, obstacles, *this);
+	obstacleDataCollection(sumCol, facingDir, m_position, m_avoidanceDistance, m_radius, obstacles);
 
 	//Accumulating forces
 	accumulate(m_acceleration, 
@@ -195,7 +233,7 @@ void Boid::update(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	m_acceleration = m_acceleration - facingDir.unit() * m_acceleration.dot(facingDir.unit());
 }
 
-void Boid::simulate(float deltaT)
+void Boid::locomotion(float deltaT)
 {
 	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
 	

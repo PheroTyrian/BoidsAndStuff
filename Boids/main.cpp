@@ -55,10 +55,10 @@ int main()
 	{
 		//Temp declaration of verteces
 		float positions[16] = {
-			0.0f, 0.0f, 0.0f, 0.0f,
-			3.0f, 0.0f, 1.0f, 0.0f,
-			3.0f, 3.0f, 1.0f, 1.0f,
-			0.0f, 3.0f, 0.0f, 1.0f
+			-2.0f, -2.0f, 0.0f, 0.0f,
+			2.0f, -2.0f, 1.0f, 0.0f,
+			2.0f, 2.0f, 1.0f, 1.0f,
+			-2.0f, 2.0f, 0.0f, 1.0f
 		};
 
 		unsigned int indices[6] = {
@@ -119,7 +119,7 @@ int main()
 			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
 			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
 			//start pos, start velocity, max acceleration, drag, 
-			boids.emplace_back(pos, vel, 0.5f, 5.0f, 100.0f, 0.75f, 5.0f, 10.0f, vao, ib, actorTex, shader);
+			boids.emplace_back(pos, vel, vao, ib, actorTex, shader);
 		}
 
 		//Create a set of obstacles
@@ -135,6 +135,7 @@ int main()
 		float boidAcc = 0.1f;
 		float boidSpeed = 1.0f;
 		float boidHome = 60.0f;
+		float boidRadius = 2.0f;
 		float boidAvoid = 5.0f;
 		float boidDetect = 10.0f;
 		bool boidDamping = true;
@@ -155,17 +156,18 @@ int main()
 				boid.setMaxAcceleration(boidAcc);
 				boid.setSpeed(boidSpeed);
 				boid.setHomeDist(boidHome);
+				boid.setRadius(boidRadius);
 				boid.setAvoidanceDist(boidAvoid);
 				boid.setDetectionDist(boidDetect);
 				boid.setDamping(boidDamping);
 				//Run boid systems
-				boid.update(boids, obstacles);
+				boid.steering(boids, obstacles);
 			}
 			//float deltaT = static_cast<float>((clock() - timeCounter) / CLOCKS_PER_SEC);
 			timeCounter = clock();
 			for (Boid& boid : boids)
 			{
-				boid.simulate(deltaT);
+				boid.locomotion(deltaT);
 				boid.draw(renderer, viewProjection);
 			}
 
@@ -200,6 +202,7 @@ int main()
 				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 1.0f);
 				ImGui::SliderFloat("Max Speed", &boidSpeed, 0.01f, 1.0f);
 				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
+				ImGui::SliderFloat("Object Radius", &boidRadius, 0.1f, 20.0f);
 				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
 				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
 				ImGui::Checkbox("Damping", &boidDamping);
