@@ -55,10 +55,10 @@ int main()
 	{
 		//Temp declaration of verteces
 		float positions[16] = {
-			-2.0f, -2.0f, 0.0f, 0.0f,
-			2.0f, -2.0f, 1.0f, 0.0f,
-			2.0f, 2.0f, 1.0f, 1.0f,
-			-2.0f, 2.0f, 0.0f, 1.0f
+			-1.0f, -1.0f, 0.0f, 0.0f,
+			1.0f, -1.0f, 1.0f, 0.0f,
+			1.0f, 1.0f, 1.0f, 1.0f,
+			-1.0f, 1.0f, 0.0f, 1.0f
 		};
 
 		unsigned int indices[6] = {
@@ -137,7 +137,7 @@ int main()
 		float boidHome = 60.0f;
 		float boidRadius = 2.0f;
 		float boidAvoid = 5.0f;
-		float boidDetect = 10.0f;
+		float boidDetect = 11.0f;
 		bool boidDamping = true;
 
 		//Loop updates until the window is closed

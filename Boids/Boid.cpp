@@ -81,7 +81,7 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 		//Collision checking
 		//Find position of closest intercept in near future (midpoint between the two closest points bounded between 0 and nearFuture)
 		float nearFuture = self.getAvoidanceDist() / self.getMaxSpeed();
-		float steps = self.getAvoidanceDist() / (self.getRadius() * 0.25f); //Should be based on the radius of the object
+		float steps = self.getAvoidanceDist() / self.getRadius(); //Should be based on the radius of the object
 
 		//Determine if it's close enough to care
 		if (nearFuture * self.getMaxSpeed() > self.getAvoidanceDist() + diff.mag())
