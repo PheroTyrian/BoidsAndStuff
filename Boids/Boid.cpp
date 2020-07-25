@@ -53,9 +53,9 @@ void flattenVectortoPlane(vec3& vector, vec3 plane)
 void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, const std::vector<Boid>& boids, const Boid& self)
 {
 	//Create temp storage of closest collision
-	float closestDistSq = self.getAvoidanceDist() * self.getAvoidanceDist();
+	float closestDist = self.getAvoidanceDist();
 	if (collision != vec3())
-		closestDistSq = collision.square();
+		closestDist = collision.square();
 
 	for (const Boid& boid : boids)
 	{
@@ -72,7 +72,7 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 			continue;
 
 		//Neighbour data
-		if (diff.square() < self.getDetectionDist() * self.getDetectionDist())
+		if (diff.mag() < self.getDetectionDist())
 		{
 			sumPosition += boid.getPosition();
 			sumVelocity += boid.getVelocity() - self.getVelocity();
@@ -84,7 +84,7 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 		float steps = self.getAvoidanceDist() / (self.getRadius() * 0.25f); //Should be based on the radius of the object
 
 		//Determine if it's close enough to care
-		if (nearFuture * (self.getVelocity().mag() + boid.getVelocity().mag()) > self.getAvoidanceDist())
+		if (nearFuture * self.getMaxSpeed() > self.getAvoidanceDist() + diff.mag())
 			continue;
 
 		//Check iteratively for collisions
@@ -92,15 +92,15 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 		{
 			vec3 selfPosition = self.getPosition() + (self.getVelocity() * t);
 			vec3 otherPosition = boid.getPosition() + (boid.getVelocity() * t);
-			float potentialClosest = (otherPosition - self.getPosition()).square();
+			float potentialClosest = (otherPosition - self.getPosition()).mag();
 			
 			//Move on if this will not provide a closer collision than has already been detected
-			if (potentialClosest > closestDistSq)
+			if (potentialClosest > closestDist)
 				continue;
 
-			if ((otherPosition - selfPosition).square() <= self.getRadius() * boid.getRadius())
+			if ((otherPosition - selfPosition).mag() <= self.getRadius() + boid.getRadius())
 			{
-				closestDistSq = potentialClosest;
+				closestDist = potentialClosest;
 				//This treats the potential moving collision target as a static object at the intercept
 				collision = otherPosition - self.getPosition();
 			}
@@ -129,9 +129,9 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 void obstacleDataCollection(vec3& collision, vec3 facingDirection, vec3 position, float avoidanceDist, float radius, const std::vector<vec3>& obstacles)
 {
 	//Create temp storage of closest obstacle
-	float closestDistSq = avoidanceDist * avoidanceDist;
+	float closestDist = avoidanceDist;
 	if (collision != vec3())
-		closestDistSq = collision.square();
+		closestDist = collision.mag();
 
 	for (const vec3& obstacle : obstacles)
 	{
@@ -145,13 +145,13 @@ void obstacleDataCollection(vec3& collision, vec3 facingDirection, vec3 position
 			continue;
 		
 		//Cull results too far from the sides
-		if ((diff - (facingDirection * distForward)).square() > radius * radius)
+		if ((diff - (facingDirection * distForward)).mag() > radius)
 			continue;
 
 		//If closest obstacle set as such and store relative position
-		if (closestDistSq > diff.square())
+		if (closestDist > diff.mag())
 		{
-			closestDistSq = diff.square();
+			closestDist = diff.mag();
 			collision = diff;
 		}
 	}
