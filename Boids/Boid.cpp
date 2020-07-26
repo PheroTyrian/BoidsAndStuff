@@ -108,24 +108,6 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 	}
 }
 
-//void obstacleDataCollection(vec3& sumCollision, const std::vector<vec3>& obstacles, const Boid& self)
-//{
-//	for (const vec3& obstacle : obstacles)
-//	{
-//		vec3 diff = obstacle - self.getPosition();
-//
-//		if (diff == vec3())
-//			continue;
-//
-//		if (diff.square() < self.getAvoidanceDist() * self.getAvoidanceDist())
-//		{
-//			float avoidScale = self.getAvoidanceDist() * self.getAvoidanceDist() - diff.square();
-//			//A vector is produced in the opposite direction to the object and of a size proportional to how close it is
-//			sumCollision -= diff.unit() * avoidScale;
-//		}
-//	}
-//}
-
 void obstacleDataCollection(vec3& collision, vec3 facingDirection, vec3 position, float avoidanceDist, float radius, const std::vector<vec3>& obstacles)
 {
 	//Create temp storage of closest obstacle
