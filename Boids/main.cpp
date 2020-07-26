@@ -53,7 +53,7 @@ int main()
 	}
 
 	{
-		//Temp declaration of verteces
+		//Declaration of verteces
 		float positions[16] = {
 			-1.0f, -1.0f, 0.0f, 0.0f,
 			1.0f, -1.0f, 1.0f, 0.0f,
@@ -110,6 +110,9 @@ int main()
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 		glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
+
+		//Create space partitioning
+
 
 		//Create a set of boids
 		std::vector<Boid> boids;
