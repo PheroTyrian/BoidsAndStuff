@@ -2,7 +2,19 @@
 #include "Boid.h"
 
 #include <cmath>
+#include <algorithm>
 
+
+bool SpacePartition::isOutOfBounds(int x, int y)
+{
+	if (x >= 0 &&
+		y >= 0 &&
+		x < m_sizeX &&
+		y < m_sizeY)
+		return false;
+	else
+		return true;
+}
 
 bool SpacePartition::isOutOfBounds(vec3 position)
 {
@@ -15,7 +27,20 @@ bool SpacePartition::isOutOfBounds(vec3 position)
 		return true;
 }
 
-std::list<const Boid*>& SpacePartition::findCell(vec3 position)
+std::list<const Boid*>& SpacePartition::getOOB()
+{
+	return m_oob;
+}
+
+std::list<const Boid*>& SpacePartition::getCell(int x, int y)
+{
+	if (isOutOfBounds(x, y))
+		return m_oob;
+	else
+		return m_partitions[x + (y * m_sizeX)];
+}
+
+std::list<const Boid*>& SpacePartition::getCell(vec3 position)
 {
 	if (isOutOfBounds(position))
 		return m_oob;
@@ -24,8 +49,40 @@ std::list<const Boid*>& SpacePartition::findCell(vec3 position)
 		vec3 unrounded = (position - m_bottomLeft) / m_partitionWidth;
 		int cellX = std::floor(unrounded.x);
 		int cellY = std::floor(unrounded.y);
-		return m_Partitions[cellX + (m_sizeX * cellY)];
+		return m_partitions[cellX + (cellY * m_sizeX)];
 	}
+}
+
+CellRange SpacePartition::findCellRange(vec3 position, float radius)
+{
+	bool oob = false;
+	//Fit to ints
+	int blX = std::floor((position.x - radius - m_bottomLeft.x) / m_partitionWidth);
+	int blY = std::floor((position.y - radius - m_bottomLeft.y) / m_partitionWidth);
+	int trX = std::floor((position.x + radius - m_bottomLeft.x) / m_partitionWidth);
+	int trY = std::floor((position.y + radius - m_bottomLeft.y) / m_partitionWidth);
+	
+	//Concatenate OOB regions
+	if (blX < 0 || blY < 0)
+	{
+		oob = true;
+		blX = std::max(blX, 0);
+		blY = std::max(blY, 0);
+	}
+	if (trX >= m_sizeX || trY >= m_sizeY)
+	{
+		oob = true;
+		trX = std::min(trX, m_sizeX);
+		trY = std::min(trY, m_sizeY);
+	}
+
+	//Catch inversions
+	blX = std::min(blX, trX);
+	blY = std::min(blY, trY);
+	trX = std::max(trX, blX);
+	trY = std::max(trY, blY);
+
+	return CellRange(blX, blY, trX, trY, oob);
 }
 
 void SpacePartition::add(const Boid* boid)
@@ -35,7 +92,7 @@ void SpacePartition::add(const Boid* boid)
 
 	vec3 position = boid->getPosition();
 
-	findCell(position).push_back(boid);
+	getCell(position).push_back(boid);
 }
 
 void SpacePartition::haveMoved(const Boid* boid, vec3 oldPosition)
@@ -45,10 +102,10 @@ void SpacePartition::haveMoved(const Boid* boid, vec3 oldPosition)
 
 	vec3 position = boid->getPosition();
 
-	std::list<const Boid*>& newCell = findCell(position);
-	std::list<const Boid*>& oldCell = findCell(oldPosition);
+	std::list<const Boid*>& newCell = getCell(position);
+	std::list<const Boid*>& oldCell = getCell(oldPosition);
 
-	if (findCell(position) == findCell(oldPosition))
+	if (getCell(position) == getCell(oldPosition))
 		return;
 	else
 	{
@@ -62,7 +119,7 @@ SpacePartition::SpacePartition(int sizeX, int sizeY, float partitionWidth)
 {
 	m_bottomLeft = vec3(-sizeX * partitionWidth / 2, -sizeY * partitionWidth / 2, 0);
 	m_topRight = vec3(m_bottomLeft.x + (partitionWidth * sizeX), m_bottomLeft.x + (partitionWidth * sizeX), 0);
-	m_Partitions.resize(sizeX * sizeY);
+	m_partitions.resize(sizeX * sizeY);
 }
 
 SpacePartition::~SpacePartition()

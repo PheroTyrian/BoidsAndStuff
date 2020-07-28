@@ -6,6 +6,16 @@
 
 class Boid;
 
+struct CellRange
+{
+	int m_blX, m_blY;
+	int m_trX, m_trY;
+	bool m_incOOB;
+
+	CellRange(int blX, int blY, int trX, int trY, int oob) :
+		m_blX(blX), m_blY(blY), m_trX(trX), m_trY(trY), m_incOOB(oob) {}
+};
+
 class SpacePartition
 {
 private:
@@ -14,13 +24,19 @@ private:
 	float m_partitionWidth;
 	vec3 m_bottomLeft;
 	vec3 m_topRight;
-	std::vector<std::list<const Boid*>> m_Partitions;
+	std::vector<std::list<const Boid*>> m_partitions;
 	std::list<const Boid*> m_oob;
 
 public:
+	bool isOutOfBounds(int x, int y);
 	bool isOutOfBounds(vec3 position);
 
-	std::list<const Boid*>& findCell(vec3 position);
+	std::list<const Boid*>& getOOB();
+
+	std::list<const Boid*>& getCell(int x, int y);
+	std::list<const Boid*>& getCell(vec3 position);
+
+	CellRange findCellRange(vec3 position, float radius);
 
 	void add(const Boid* boid);
 
