@@ -8,12 +8,12 @@ class Boid;
 
 struct CellRange
 {
-	int m_blX, m_blY;
-	int m_trX, m_trY;
-	bool m_incOOB;
+	int blX, blY;
+	int trX, trY;
+	bool incOOB;
 
-	CellRange(int blX, int blY, int trX, int trY, int oob) :
-		m_blX(blX), m_blY(blY), m_trX(trX), m_trY(trY), m_incOOB(oob) {}
+	CellRange(int bl_X, int bl_Y, int tr_X, int tr_Y, int oob) :
+		blX(bl_X), blY(bl_Y), trX(tr_X), trY(tr_Y), incOOB(oob) {}
 };
 
 class SpacePartition
@@ -28,17 +28,21 @@ private:
 	std::list<const Boid*> m_oob;
 
 public:
-	bool isOutOfBounds(int x, int y);
-	bool isOutOfBounds(vec3 position);
+	bool isOutOfBounds(int x, int y) const;
+	bool isOutOfBounds(vec3 position) const;
 
-	std::list<const Boid*>& getOOB();
-
-	std::list<const Boid*>& getCell(int x, int y);
+	int getStoredObjects() { return m_storedObjects; }
+	int getSizeX() { return m_sizeX; }
+	int getSizeY() { return m_sizeY; }
+	const std::list<const Boid*>& getOOB() const { return m_oob; }
+	
+	const std::list<const Boid*>& getCell(int x, int y) const;
 	std::list<const Boid*>& getCell(vec3 position);
 
-	CellRange findCellRange(vec3 position, float radius);
+	CellRange findCellRange(vec3 position, float radius) const;
 
 	void add(const Boid* boid);
+	void remove(const Boid* boid);
 
 	void haveMoved(const Boid* boid, vec3 oldPosition);
 

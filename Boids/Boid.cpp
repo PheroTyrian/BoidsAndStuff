@@ -1,18 +1,22 @@
 #include "Boid.h"
 #include "Shader.h"
 #include "VertexArray.h"
+#include "SpacePartition.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include <cmath>
 #include <random>
 
-Boid::Boid(vec3 pos, vec3 vel, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
+Boid::Boid(vec3 pos, vec3 vel, SpacePartition& partition, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
 	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_maxAcceleration(1.0f), m_maxSpeed(10.0f), m_homeDist(100.0f),
-	m_viewArc(0.75f), m_radius(2.0f), m_avoidanceDistance(5.0f), m_detectionDistance(10.0f), m_vao(vao), m_ib(ia), m_tex(tex), m_shader(shader)
+	m_viewArc(0.75f), m_radius(2.0f), m_avoidanceDistance(5.0f), m_detectionDistance(10.0f), m_partition(partition), m_vao(vao),
+	m_ib(ia), m_tex(tex), m_shader(shader)
 {
+	m_partition.add(this);
 }
 
 Boid::~Boid()
 {
+	m_partition.remove(this);
 }
 
 //Start of removal area
@@ -50,17 +54,13 @@ void flattenVectortoPlane(vec3& vector, vec3 plane)
 	vector -= plane * plane.dot(vector);
 }
 
-void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, const std::vector<Boid>& boids, const Boid& self)
+void dataCollectionFromList(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
+	float& closestDist, const Boid& self, const std::list<const Boid*>& boidList)
 {
-	//Create temp storage of closest collision
-	float closestDist = self.getAvoidanceDist();
-	if (collision != vec3())
-		closestDist = collision.square();
-
-	for (const Boid& boid : boids)
+	for (const Boid* boid : boidList)
 	{
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
-		vec3 diff = boid.getPosition() - self.getPosition();
+		vec3 diff = boid->getPosition() - self.getPosition();
 
 		//Don't count self
 		if (diff == vec3())
@@ -74,8 +74,8 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 		//Neighbour data
 		if (diff.mag() < self.getDetectionDist())
 		{
-			sumPosition += boid.getPosition();
-			sumVelocity += boid.getVelocity() - self.getVelocity();
+			sumPosition += boid->getPosition();
+			sumVelocity += boid->getVelocity() - self.getVelocity();
 		}
 
 		//Collision checking
@@ -84,27 +84,54 @@ void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision, 
 		float steps = self.getAvoidanceDist() / self.getRadius(); //Should be based on the radius of the object
 
 		//Determine if it's close enough to care
-		if (nearFuture * self.getMaxSpeed() > self.getAvoidanceDist() + diff.mag())
+		if (self.getAvoidanceDist() < diff.mag())
 			continue;
 
 		//Check iteratively for collisions
 		for (float t = 0.0f; t <= nearFuture; t += (nearFuture / steps))
 		{
 			vec3 selfPosition = self.getPosition() + (self.getVelocity() * t);
-			vec3 otherPosition = boid.getPosition() + (boid.getVelocity() * t);
+			vec3 otherPosition = boid->getPosition() + (boid->getVelocity() * t);
 			float potentialClosest = (otherPosition - self.getPosition()).mag();
-			
+
 			//Move on if this will not provide a closer collision than has already been detected
 			if (potentialClosest > closestDist)
 				continue;
 
-			if ((otherPosition - selfPosition).mag() <= self.getRadius() + boid.getRadius())
+			if ((otherPosition - selfPosition).mag() <= self.getRadius() + boid->getRadius())
 			{
 				closestDist = potentialClosest;
 				//This treats the potential moving collision target as a static object at the intercept
 				collision = otherPosition - self.getPosition();
 			}
 		}
+	}
+}
+
+void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
+	const Boid& self, const SpacePartition& partition)
+{
+	//Create temp storage of closest collision
+	float closestDist = self.getAvoidanceDist();
+	if (collision != vec3())
+		closestDist = collision.square();
+
+	//Find the search region
+	CellRange range = partition.findCellRange(self.getPosition(), std::max(self.getDetectionDist(), self.getAvoidanceDist()));
+
+	//Check through each cell in range
+	for (int y = range.blY; y < range.trY; y++)
+	{
+		for (int x = range.blX; x < range.trX; x++)
+		{
+			dataCollectionFromList(sumPosition, sumVelocity, collision, 
+				closestDist, self, partition.getCell(x, y));
+		}
+	}
+	if (range.incOOB)
+	{
+		dataCollectionFromList(sumPosition, sumVelocity, collision,
+			closestDist, self, partition.getOOB());
 	}
 }
 
@@ -191,7 +218,7 @@ void Boid::steering(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	vec3 sumVel = vec3();
 	vec3 sumCol = vec3();
 
-	actorDataCollection(sumPos, sumVel, sumCol, boids, *this);
+	actorDataCollection(sumPos, sumVel, sumCol, *this, m_partition);
 	obstacleDataCollection(sumCol, facingDir, m_position, m_avoidanceDistance, m_radius, obstacles);
 
 	//Accumulating forces
@@ -221,7 +248,11 @@ void Boid::locomotion(float deltaT)
 	
 	m_velocity = m_velocity.unit() * m_maxSpeed;
 
+	vec3 oldPosition = m_position;
+
 	m_position += m_velocity * deltaT;
+
+	m_partition.haveMoved(this, oldPosition);
 }
 
 void Boid::draw(Renderer & renderer, glm::mat4 viewProjection)

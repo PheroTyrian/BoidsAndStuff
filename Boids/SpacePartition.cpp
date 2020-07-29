@@ -5,7 +5,7 @@
 #include <algorithm>
 
 
-bool SpacePartition::isOutOfBounds(int x, int y)
+bool SpacePartition::isOutOfBounds(int x, int y) const
 {
 	if (x >= 0 &&
 		y >= 0 &&
@@ -16,7 +16,7 @@ bool SpacePartition::isOutOfBounds(int x, int y)
 		return true;
 }
 
-bool SpacePartition::isOutOfBounds(vec3 position)
+bool SpacePartition::isOutOfBounds(vec3 position) const
 {
 	if (position.x >= m_bottomLeft.x && 
 		position.y >= m_bottomLeft.y &&
@@ -27,12 +27,7 @@ bool SpacePartition::isOutOfBounds(vec3 position)
 		return true;
 }
 
-std::list<const Boid*>& SpacePartition::getOOB()
-{
-	return m_oob;
-}
-
-std::list<const Boid*>& SpacePartition::getCell(int x, int y)
+const std::list<const Boid*>& SpacePartition::getCell(int x, int y) const
 {
 	if (isOutOfBounds(x, y))
 		return m_oob;
@@ -53,7 +48,7 @@ std::list<const Boid*>& SpacePartition::getCell(vec3 position)
 	}
 }
 
-CellRange SpacePartition::findCellRange(vec3 position, float radius)
+CellRange SpacePartition::findCellRange(vec3 position, float radius) const
 {
 	bool oob = false;
 	//Fit to ints
@@ -93,6 +88,16 @@ void SpacePartition::add(const Boid* boid)
 	vec3 position = boid->getPosition();
 
 	getCell(position).push_back(boid);
+}
+
+void SpacePartition::remove(const Boid* boid)
+{
+	if (!boid)
+		return;
+
+	vec3 position = boid->getPosition();
+
+	getCell(position).remove(boid);
 }
 
 void SpacePartition::haveMoved(const Boid* boid, vec3 oldPosition)

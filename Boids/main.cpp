@@ -4,6 +4,7 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "Texture.h"
+#include "SpacePartition.h"
 
 #include <iostream>
 #include <string>
@@ -112,7 +113,7 @@ int main()
 		glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		//Create space partitioning
-
+		SpacePartition spacePartition = SpacePartition(32, 32, 5.0f);
 
 		//Create a set of boids
 		std::vector<Boid> boids;
@@ -122,7 +123,7 @@ int main()
 			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
 			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
 			//start pos, start velocity, max acceleration, drag, 
-			boids.emplace_back(pos, vel, vao, ib, actorTex, shader);
+			boids.emplace_back(pos, vel, spacePartition, vao, ib, actorTex, shader);
 		}
 
 		//Create a set of obstacles
