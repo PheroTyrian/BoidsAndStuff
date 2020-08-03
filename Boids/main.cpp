@@ -257,7 +257,7 @@ int main()
 				//static int counter = 0;
 				ImGui::SliderFloat("Simulation speed", &simSpeed, 0.0f, 1.0f);
 				ImGui::Text("Boid settings");
-				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 1.0f);
+				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 0.2f);
 				ImGui::SliderFloat("Max Speed", &boidSpeed, 0.01f, 1.0f);
 				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
 				ImGui::SliderFloat("View Arc", &boidView, 0.0f, 1.0f);
