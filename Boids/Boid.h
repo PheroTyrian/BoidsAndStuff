@@ -13,6 +13,7 @@ private:
 	vec3 m_position;
 	vec3 m_velocity;
 	vec3 m_acceleration;
+	vec3 m_homeLocation;
 
 	float m_maxAcceleration;
 	float m_maxSpeed;
@@ -43,6 +44,7 @@ public:
 	float getMaxAcceleration() const { return m_maxAcceleration; }
 	float getMaxSpeed() const { return m_maxSpeed; }
 	float getHomeDistance() const { return m_homeDist; }
+	vec3 getHomeLocation() const { return m_homeLocation; }
 	float getViewArc() const { return m_viewArc; }
 	float getRadius() const { return m_radius;  }
 	float getAvoidanceDist() const { return m_avoidanceDistance; }
@@ -53,6 +55,8 @@ public:
 	void setMaxAcceleration(float newMax) { m_maxAcceleration = newMax; }
 	void setSpeed(float newSpeed) { m_maxSpeed = newSpeed; }
 	void setHomeDist(float newDist) { m_homeDist = newDist; }
+	void setHomeLocation(vec3 newLocation) { m_homeLocation = newLocation; }
+	void setViewArc(float newArc) { m_viewArc = newArc; }
 	void setRadius(float newRadius) { m_radius = newRadius; }
 	void setAvoidanceDist(float newDist) { m_avoidanceDistance = newDist; }
 	void setDetectionDist(float newDist) { m_detectionDistance = newDist; }

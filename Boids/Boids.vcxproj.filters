@@ -42,6 +42,9 @@
     <ClInclude Include="SpacePartition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ActorSteerFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Boid.cpp">
@@ -84,6 +87,9 @@
       <Filter>External</Filter>
     </ClCompile>
     <ClCompile Include="SpacePartition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ActorSteerFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

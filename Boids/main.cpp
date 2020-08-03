@@ -17,13 +17,36 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
 
-constexpr int screenWidth = 1200;
-constexpr int screenHeight = 800;
-
 constexpr int initialBoids = 100;
 constexpr int initialObst = 10;
 
-void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vector<vec3>& obstacles, 
+static int screenWidth = 1200;
+static int screenHeight = 800;
+
+static int lmbPressed = 0;
+static int rmbPressed = 0;
+static double scrollMoved = 0.0f;
+
+void window_size_callback(GLFWwindow* window, int width, int height)
+{
+	screenHeight = height;
+	screenWidth = width;
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+		lmbPressed++;
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+		rmbPressed++;
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	scrollMoved += yoffset;
+}
+
+void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vector<vec3>& obstacles,
 	SpacePartition& spacePartition, VertexArray& vao, IndexBuffer& ib, Texture& actorTex, Shader& shader)
 {
 	//Create a set of boids
@@ -43,6 +66,13 @@ void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vect
 		obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
 	}
 }
+
+enum class Placement
+{
+	actor,
+	obstacle,
+	destination
+};
 
 int main()
 {
@@ -109,8 +139,7 @@ int main()
 		//Fetching textures
 		Texture actorTex("Arrow.png");
 		Texture obstTex("Obstacle.png");
-
-		//shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
+		Texture destTex("Home.png");
 
 		//Unbinding everything
 		vao.unbind();
@@ -131,6 +160,7 @@ int main()
 		//due to column first ordering MVP is multiplied in reverse: P * V * M
 		//Order: left, right, bottom, top, near, far
 		float orthoWidth = 100.0f;
+		float orthoHeight = 100.0f;
 		glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		//Create space partitioning
@@ -146,10 +176,18 @@ int main()
 		float boidAcc = 0.1f;
 		float boidSpeed = 1.0f;
 		float boidHome = 60.0f;
+		float boidView = 0.5f;
 		float boidRadius = 2.0f;
-		float boidAvoid = 5.0f;
+		float boidAvoid = 10.0f;
 		float boidDetect = 11.0f;
 		bool boidDamping = true;
+		vec3 destination = vec3();
+		Placement placeType = Placement::actor;
+
+		//Set callback triggers
+		glfwSetWindowSizeCallback(window, window_size_callback);
+		glfwSetMouseButtonCallback(window, mouse_button_callback);
+		glfwSetScrollCallback(window, scroll_callback);
 
 		//Loop updates until the window is closed
 		//clock_t timeCounter = clock();
@@ -160,16 +198,7 @@ int main()
 			//float deltaT = 1.0f;//static_cast<float>((clock() - timeCounter)/ 20);
 			//timeCounter = clock();
 
-			//Inputs
-			{
-				glm::vec3 position = glm::vec3(0, 0, 5);
-				//Angle toward -Z
-				float horizontalAngle = 3.14f;
-				// vertical angle : 0, look at the horizon
-				float verticalAngle = 0.0f;
-				float initialFoV = 45.0f;
-				float speed = 1.0f;
-			}
+			//Key inputs
 			if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 				translation -= glm::vec3(0.0f, 1.0f, 0.0f) * simSpeed;
 			if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
@@ -178,10 +207,119 @@ int main()
 				translation += glm::vec3(1.0f, 0.0f, 0.0f) * simSpeed;
 			if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 				translation -= glm::vec3(1.0f, 0.0f, 0.0f) * simSpeed;
+			//Mouse click inputs
+			if (glfwGetWindowAttrib(window, GLFW_HOVERED) && (lmbPressed != 0 || rmbPressed != 0))
+			{
+				//Find mouse position worldspace
+				//Y is from BL in simulation but TL in screenspace hence inversion
+				double mouseX, mouseY;
+				glfwGetCursorPos(window, &mouseX, &mouseY);
+				mouseX = (mouseX * orthoWidth * 2 / screenWidth) - orthoWidth;
+				mouseY = (double)orthoHeight - (mouseY * orthoHeight * 2 / screenHeight);
+				vec3 clickPosition((float)mouseX, (float)mouseY, 0.0f);
 
+				int lmb = lmbPressed;
+				lmbPressed = 0;
+				int rmb = rmbPressed;
+				rmbPressed = 0;
+				for (; lmb != 0; lmb--)
+				{
+					//Things that happen on left mouse press
+				}
+				for (; rmb != 0; rmb--)
+				{
+					//Things that happen on right mouse press
+					switch (placeType)
+					{
+					case Placement::actor:
+						boids.emplace_back(clickPosition, vec3(), 
+							spacePartition, vao, ib, actorTex, shader);
+						break;
+					case Placement::obstacle:
+						obstacles.emplace_back(clickPosition);
+						break;
+					case Placement::destination:
+						destination = clickPosition;
+						break;
+					}
+				}
+			}
+			//Mouse scroll input
+			if (glfwGetWindowAttrib(window, GLFW_HOVERED) && scrollMoved != 0.0f)
+			{
+				float zoomAmount = scrollMoved;
+				scrollMoved = 0.0f;
+				orthoHeight += zoomAmount * 5.0f;
+				orthoWidth += zoomAmount * 5.0f;
+			}
+			//Imgui inputs
+			{
+				//static int counter = 0;
+				ImGui::SliderFloat("Simulation speed", &simSpeed, 0.0f, 1.0f);
+				ImGui::Text("Boid settings");
+				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 1.0f);
+				ImGui::SliderFloat("Max Speed", &boidSpeed, 0.01f, 1.0f);
+				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
+				ImGui::SliderFloat("View Arc", &boidView, 0.0f, 1.0f);
+				ImGui::SliderFloat("Object Radius", &boidRadius, 0.1f, 20.0f);
+				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
+				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
+				ImGui::Checkbox("Damping", &boidDamping);
+				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
+				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+				//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
+				//ImGui::Checkbox("Another Window", &show_another_window);
+
+				if (ImGui::Button("Restart"))
+				{
+					boids.clear();
+					obstacles.clear();
+					orthoHeight = 100.0f;
+					orthoWidth = 100.0f;
+					fillEntities(0, 0, boids, obstacles, spacePartition, vao, ib, actorTex, shader);
+				}
+
+				if (ImGui::Button("Place actor"))
+					placeType = Placement::actor;
+				ImGui::SameLine();
+				if (ImGui::Button("Place obstacle"))
+					placeType = Placement::obstacle;
+				ImGui::SameLine();
+				if (ImGui::Button("Place destination"))
+					placeType = Placement::destination;
+				switch (placeType)
+				{
+				case Placement::actor:
+					ImGui::Text("RMB places an actor");
+					break;
+				case Placement::obstacle:
+					ImGui::Text("RMB places an obstacle");
+					break;
+				case Placement::destination:
+					ImGui::Text("RMB places the destination");
+					break;
+				}
+
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			}
+
+			//Start of rendering and simulation
 			glm::mat4 view = glm::translate(glm::mat4(1.0f), translation);
-			projection = glm::ortho(-orthoWidth, orthoWidth, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth);
+			glm::mat4 projection = glm::ortho(-orthoWidth, orthoWidth, -orthoHeight, orthoHeight, -10.0f, 10.0f);
 			glm::mat4 viewProjection = projection * view;
+
+			{
+				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(destination.x, destination.y, destination.z));
+				glm::mat4 modelViewProjection = viewProjection * model;
+
+				shader.bind();
+				destTex.bind(0);
+				shader.setUniform1i("u_texture", 0);
+				shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
+
+				renderer.draw(vao, ib, shader);
+			}
 
 			for (Boid& boid : boids)
 			{
@@ -189,10 +327,12 @@ int main()
 				boid.setMaxAcceleration(boidAcc);
 				boid.setSpeed(boidSpeed);
 				boid.setHomeDist(boidHome);
+				boid.setViewArc(boidView);
 				boid.setRadius(boidRadius);
 				boid.setAvoidanceDist(boidAvoid);
 				boid.setDetectionDist(boidDetect);
 				boid.setDamping(boidDamping);
+				boid.setHomeLocation(destination);
 				//Run boid systems
 				boid.steering(boids, obstacles);
 			}
@@ -208,6 +348,7 @@ int main()
 				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(obst.x, obst.y, obst.z));
 				glm::mat4 modelViewProjection = viewProjection * model;
 
+				shader.bind();
 				obstTex.bind(0);
 				shader.setUniform1i("u_texture", 0);
 				shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
@@ -215,48 +356,7 @@ int main()
 				renderer.draw(vao, ib, shader);
 			}
 			
-			// render
-			/*glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-			glm::mat4 modelViewProjection = viewProjection * model;
-
-			shader.bind();
-			texture.bind(0);
-			shader.setUniform1i("u_texture", 0);
-			shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
-
-			renderer.draw(vao, ib, shader);*/
-
-			//Imgui
-			{
-				//static int counter = 0;
-				ImGui::SliderFloat("Simulation speed", &simSpeed, 0.0f, 1.0f);
-				ImGui::Text("Boid settings");
-				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 1.0f);
-				ImGui::SliderFloat("Max Speed", &boidSpeed, 0.01f, 1.0f);
-				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
-				ImGui::SliderFloat("Object Radius", &boidRadius, 0.1f, 20.0f);
-				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
-				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
-				ImGui::Checkbox("Damping", &boidDamping);
-				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
-				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-				//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
-				//ImGui::Checkbox("Another Window", &show_another_window);
-
-				if (ImGui::Button("Restart"))
-				{
-					boids.clear();
-					obstacles.clear();
-					fillEntities(0, 0, boids, obstacles, spacePartition, vao, ib, actorTex, shader);
-				}
-
-				//ImGui::SameLine();
-				//ImGui::Text("= %d", counter);
-
-				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			}
-
+			//Rendering GUI
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
