@@ -28,14 +28,20 @@ private:
 	VertexArray& m_vao;
 	IndexBuffer& m_ib;
 	Texture& m_tex;
+	Texture& m_outlineR;
+	Texture& m_outlineB;
 	Shader& m_shader;
 public:
-	Boid(vec3 pos, vec3 vel, SpacePartition& partition, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader);
+	Boid(vec3 pos, vec3 vel, SpacePartition& partition, VertexArray& vao, 
+		IndexBuffer& ia, Texture& tex, Texture& outlineTexR, Texture& outlineTexB, 
+		Shader& shader);
 	~Boid();
 
 	void steering(std::vector<Boid>& boids, std::vector<vec3>& obstacle);
 	void locomotion(float deltaT);
 	void draw(Renderer& renderer, glm::mat4 viewProjection);
+	void drawAuras(Renderer& renderer, glm::mat4 viewProjection,
+		bool drawAvoid, bool drawDetect);
 
 	vec3 getPosition() const { return m_position; }
 	vec3 getVelocity() const { return m_velocity; }

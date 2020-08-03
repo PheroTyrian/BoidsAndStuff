@@ -7,10 +7,10 @@
 #include <cmath>
 #include <random>
 
-Boid::Boid(vec3 pos, vec3 vel, SpacePartition& partition, VertexArray& vao, IndexBuffer& ia, Texture& tex, Shader& shader)
+Boid::Boid(vec3 pos, vec3 vel, SpacePartition& partition, VertexArray& vao, IndexBuffer& ia, Texture& tex, Texture& outlineTexR, Texture& outlineTexB, Shader& shader)
 	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_homeLocation(vec3()), m_maxAcceleration(1.0f), m_maxSpeed(10.0f), m_homeDist(100.0f),
 	m_viewArc(0.75f), m_radius(2.0f), m_avoidanceDistance(5.0f), m_detectionDistance(10.0f), m_partition(partition), m_vao(vao),
-	m_ib(ia), m_tex(tex), m_shader(shader)
+	m_ib(ia), m_tex(tex), m_outlineR(outlineTexR), m_outlineB(outlineTexB), m_shader(shader)
 {
 	m_partition.add(this);
 }
@@ -80,14 +80,42 @@ void Boid::draw(Renderer & renderer, glm::mat4 viewProjection)
 	//Get rotation amount
 	float angle = glm::acos(glm::dot(vel, worldUp));
 
+	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_radius/2));
 	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), angle, pivot);
-	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z));
+	glm::mat4 translate = glm::translate(
+		glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z));
 
-	glm::mat4 model = translate * rotate;
+	glm::mat4 model = translate * rotate * scale;
 	glm::mat4 modelViewProjection = viewProjection * model;
 
 	m_shader.setUniform1i("u_texture", 0);
 	m_shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
 
 	renderer.draw(m_vao, m_ib, m_shader);
+}
+
+void Boid::drawAuras(
+	Renderer& renderer, glm::mat4 viewProjection, bool drawAvoid, bool drawDetect)
+{
+	m_shader.bind();
+	if (drawAvoid)
+	{
+		m_outlineR.bind(0);
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_avoidanceDistance/2));
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z));
+		glm::mat4 modelViewProjection = viewProjection * model * scale;
+		m_shader.setUniform1i("u_texture", 0);
+		m_shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
+		renderer.draw(m_vao, m_ib, m_shader);
+	}
+	if (drawDetect)
+	{
+		m_outlineB.bind(0);
+		glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_detectionDistance/2));
+		glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(m_position.x, m_position.y, m_position.z));
+		glm::mat4 modelViewProjection = viewProjection * model * scale;
+		m_shader.setUniform1i("u_texture", 0);
+		m_shader.setUniformMat4f("u_modelViewProjection", modelViewProjection);
+		renderer.draw(m_vao, m_ib, m_shader);
+	}
 }

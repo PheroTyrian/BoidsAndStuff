@@ -47,7 +47,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vector<vec3>& obstacles,
-	SpacePartition& spacePartition, VertexArray& vao, IndexBuffer& ib, Texture& actorTex, Shader& shader)
+	SpacePartition& spacePartition, VertexArray& vao, IndexBuffer& ib, Texture& actorTex, Texture& rTex, Texture& bTex, Shader& shader)
 {
 	//Create a set of boids
 	boids.reserve(numBoids);
@@ -56,7 +56,7 @@ void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vect
 		vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
 		vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
 		//start pos, start velocity, max acceleration, drag, 
-		boids.emplace_back(pos, vel, spacePartition, vao, ib, actorTex, shader);
+		boids.emplace_back(pos, vel, spacePartition, vao, ib, actorTex, rTex, bTex, shader);
 	}
 
 	//Create a set of obstacles
@@ -140,6 +140,8 @@ int main()
 		Texture actorTex("Arrow.png");
 		Texture obstTex("Obstacle.png");
 		Texture destTex("Home.png");
+		Texture rTex("RadiusRed.png");
+		Texture bTex("RadiusBlue.png");
 
 		//Unbinding everything
 		vao.unbind();
@@ -169,7 +171,8 @@ int main()
 		//Create a set of boids and obstacles
 		std::vector<Boid> boids;
 		std::vector<vec3> obstacles;
-		fillEntities(initialBoids, initialObst, boids, obstacles, spacePartition, vao, ib, actorTex, shader);
+		fillEntities(initialBoids, initialObst, boids, obstacles, spacePartition, 
+			vao, ib, actorTex, rTex, bTex, shader);
 
 		//Setting boid properties (updated each frame)
 		float simSpeed = 1.0f;
@@ -181,6 +184,8 @@ int main()
 		float boidAvoid = 10.0f;
 		float boidDetect = 11.0f;
 		bool boidDamping = true;
+		bool drawAvoid = false;
+		bool drawDetect = false;
 		vec3 destination = vec3();
 		Placement placeType = Placement::actor;
 
@@ -200,13 +205,13 @@ int main()
 
 			//Key inputs
 			if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-				translation -= glm::vec3(0.0f, 1.0f, 0.0f) * simSpeed;
+				translation -= glm::vec3(0.0f, 1.0f, 0.0f);
 			if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-				translation += glm::vec3(0.0f, 1.0f, 0.0f) * simSpeed;
+				translation += glm::vec3(0.0f, 1.0f, 0.0f);
 			if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-				translation += glm::vec3(1.0f, 0.0f, 0.0f) * simSpeed;
+				translation += glm::vec3(1.0f, 0.0f, 0.0f);
 			if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-				translation -= glm::vec3(1.0f, 0.0f, 0.0f) * simSpeed;
+				translation -= glm::vec3(1.0f, 0.0f, 0.0f);
 			//Mouse click inputs
 			if (glfwGetWindowAttrib(window, GLFW_HOVERED) && (lmbPressed != 0 || rmbPressed != 0))
 			{
@@ -232,8 +237,8 @@ int main()
 					switch (placeType)
 					{
 					case Placement::actor:
-						boids.emplace_back(clickPosition, vec3(), 
-							spacePartition, vao, ib, actorTex, shader);
+						boids.emplace_back(clickPosition, vec3(), spacePartition,
+							vao, ib, actorTex, rTex, bTex, shader);
 						break;
 					case Placement::obstacle:
 						obstacles.emplace_back(clickPosition);
@@ -265,6 +270,10 @@ int main()
 				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
 				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
 				ImGui::Checkbox("Damping", &boidDamping);
+				ImGui::SameLine();
+				ImGui::Checkbox("Draw avoidance", &drawAvoid);
+				ImGui::SameLine();
+				ImGui::Checkbox("Draw detection", &drawDetect);
 				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
 				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
@@ -277,7 +286,8 @@ int main()
 					obstacles.clear();
 					orthoHeight = 100.0f;
 					orthoWidth = 100.0f;
-					fillEntities(0, 0, boids, obstacles, spacePartition, vao, ib, actorTex, shader);
+					fillEntities(0, 0, boids, obstacles, spacePartition, vao, ib, 
+						actorTex, rTex, bTex, shader);
 				}
 
 				if (ImGui::Button("Place actor"))
@@ -333,8 +343,10 @@ int main()
 				boid.setDetectionDist(boidDetect);
 				boid.setDamping(boidDamping);
 				boid.setHomeLocation(destination);
-				//Run boid systems
+				//Run boid steering
 				boid.steering(boids, obstacles);
+				//Draw radii
+				boid.drawAuras(renderer, viewProjection, drawAvoid, drawDetect);
 			}
 			
 			for (Boid& boid : boids)
