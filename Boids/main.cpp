@@ -20,8 +20,29 @@
 constexpr int screenWidth = 1200;
 constexpr int screenHeight = 800;
 
-constexpr int numBoids = 100;
-constexpr int numObst = 10;
+constexpr int initialBoids = 100;
+constexpr int initialObst = 10;
+
+void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vector<vec3>& obstacles, 
+	SpacePartition& spacePartition, VertexArray& vao, IndexBuffer& ib, Texture& actorTex, Shader& shader)
+{
+	//Create a set of boids
+	boids.reserve(numBoids);
+	for (int i = 0; i < numBoids; i++)
+	{
+		vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
+		vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
+		//start pos, start velocity, max acceleration, drag, 
+		boids.emplace_back(pos, vel, spacePartition, vao, ib, actorTex, shader);
+	}
+
+	//Create a set of obstacles
+	obstacles.reserve(numObst);
+	for (int i = 0; i < numObst; i++)
+	{
+		obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
+	}
+}
 
 int main()
 {
@@ -81,11 +102,6 @@ int main()
 
 		IndexBuffer ib(indices, 6);
 
-		//Matrices
-		//due to column first ordering MVP is multiplied in reverse: P * V * M
-		//Order: left, right, bottom, top, near, far
-		glm::mat4 projection = glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, -100.0f, 100.0f);
-
 		//Compiling shaders and switching openGL over to using them
 		Shader shader("Shader.shader");
 		shader.bind();
@@ -110,32 +126,23 @@ int main()
 
 		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+
+		//Matrices variables
+		//due to column first ordering MVP is multiplied in reverse: P * V * M
+		//Order: left, right, bottom, top, near, far
+		float orthoWidth = 100.0f;
 		glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		//Create space partitioning
 		SpacePartition spacePartition = SpacePartition(32, 32, 5.0f);
 
-		//Create a set of boids
+		//Create a set of boids and obstacles
 		std::vector<Boid> boids;
-		boids.reserve(numBoids);
-		for (int i = 0; i < numBoids; i++)
-		{
-			vec3 pos = vec3((float)(rand() % 201) - 100, (float)(rand() % 201) - 100, 0.0f);
-			vec3 vel = vec3((float)(rand() % 7) - 3, (float)(rand() % 7) - 3, 0.0f);
-			//start pos, start velocity, max acceleration, drag, 
-			boids.emplace_back(pos, vel, spacePartition, vao, ib, actorTex, shader);
-		}
-
-		//Create a set of obstacles
 		std::vector<vec3> obstacles;
-		obstacles.reserve(numObst);
-		for (int i = 0; i < numObst; i++)
-		{
-			obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
-		}
+		fillEntities(initialBoids, initialObst, boids, obstacles, spacePartition, vao, ib, actorTex, shader);
 
 		//Setting boid properties (updated each frame)
-		float deltaT = 1.0f;
+		float simSpeed = 1.0f;
 		float boidAcc = 0.1f;
 		float boidSpeed = 1.0f;
 		float boidHome = 60.0f;
@@ -145,13 +152,35 @@ int main()
 		bool boidDamping = true;
 
 		//Loop updates until the window is closed
-		clock_t timeCounter = clock();
+		//clock_t timeCounter = clock();
 		while (!glfwWindowShouldClose(window))
 		{
 			renderer.clear();
 			ImGui_ImplGlfwGL3_NewFrame();
+			//float deltaT = 1.0f;//static_cast<float>((clock() - timeCounter)/ 20);
+			//timeCounter = clock();
+
+			//Inputs
+			{
+				glm::vec3 position = glm::vec3(0, 0, 5);
+				//Angle toward -Z
+				float horizontalAngle = 3.14f;
+				// vertical angle : 0, look at the horizon
+				float verticalAngle = 0.0f;
+				float initialFoV = 45.0f;
+				float speed = 1.0f;
+			}
+			if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+				translation -= glm::vec3(0.0f, 1.0f, 0.0f) * simSpeed;
+			if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+				translation += glm::vec3(0.0f, 1.0f, 0.0f) * simSpeed;
+			if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+				translation += glm::vec3(1.0f, 0.0f, 0.0f) * simSpeed;
+			if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+				translation -= glm::vec3(1.0f, 0.0f, 0.0f) * simSpeed;
 
 			glm::mat4 view = glm::translate(glm::mat4(1.0f), translation);
+			projection = glm::ortho(-orthoWidth, orthoWidth, -orthoWidth, orthoWidth, -orthoWidth, orthoWidth);
 			glm::mat4 viewProjection = projection * view;
 
 			for (Boid& boid : boids)
@@ -167,11 +196,10 @@ int main()
 				//Run boid systems
 				boid.steering(boids, obstacles);
 			}
-			//float deltaT = static_cast<float>((clock() - timeCounter) / CLOCKS_PER_SEC);
-			timeCounter = clock();
+			
 			for (Boid& boid : boids)
 			{
-				boid.locomotion(deltaT);
+				boid.locomotion(simSpeed);
 				boid.draw(renderer, viewProjection);
 			}
 
@@ -201,7 +229,7 @@ int main()
 			//Imgui
 			{
 				//static int counter = 0;
-				ImGui::SliderFloat("Simulation speed", &deltaT, 0.0f, 1.0f);
+				ImGui::SliderFloat("Simulation speed", &simSpeed, 0.0f, 1.0f);
 				ImGui::Text("Boid settings");
 				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 1.0f);
 				ImGui::SliderFloat("Max Speed", &boidSpeed, 0.01f, 1.0f);
@@ -216,8 +244,13 @@ int main()
 				//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
 				//ImGui::Checkbox("Another Window", &show_another_window);
 
-				//if (ImGui::Button("Counter"))
-				//	counter++;
+				if (ImGui::Button("Restart"))
+				{
+					boids.clear();
+					obstacles.clear();
+					fillEntities(0, 0, boids, obstacles, spacePartition, vao, ib, actorTex, shader);
+				}
+
 				//ImGui::SameLine();
 				//ImGui::Text("= %d", counter);
 
