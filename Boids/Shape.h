@@ -28,10 +28,12 @@ private:
 public:
 	bool isPointInside(vec3 point);
 
+	Shape(vec3 position);
 	Shape(vec3 position, std::list<Line>& lines);
-	//Creates a square
-	Shape(vec3 position, float dir, float length);
+	Shape(std::list<vec3>& points, vec3 position);
+	//Creates a square and adds it to the shape via 
+	void addSquare(vec3 dir, float length);
 	//Creates a cone
-	Shape(vec3 position, float dir, float width, float length);
+	void addCone(vec3 dir, float width, float length);
 };
 
