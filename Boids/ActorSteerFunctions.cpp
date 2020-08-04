@@ -2,10 +2,11 @@
 #include "vec3.h"
 #include "Boid.h"
 #include "SpacePartition.h"
-#include <cmath>
 #include <vector>
 #include <list>
 #include <algorithm>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 using namespace ASF;
 
@@ -90,7 +91,7 @@ void ASF::collectionFromActors(vec3& sumPosition, vec3& sumVelocity, vec3& colli
 
 		//Blind behind
 		float sigma = diff.dot(self.getVelocity()) / (diff.mag() * self.getVelocity().mag());
-		if (std::acos(sigma) > 3.1416 * self.getViewArc())
+		if (acos(sigma) > M_PI * self.getViewArc())
 			continue;
 
 		//Neighbour data

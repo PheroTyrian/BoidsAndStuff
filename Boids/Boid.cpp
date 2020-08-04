@@ -4,8 +4,6 @@
 #include "SpacePartition.h"
 #include "glm/gtc/matrix_transform.hpp"
 #include "ActorSteerFunctions.h"
-#include <cmath>
-#include <random>
 
 Boid::Boid(vec3 pos, vec3 vel, SpacePartition& partition, VertexArray& vao, IndexBuffer& ia, Texture& tex, Texture& outlineTexR, Texture& outlineTexB, Shader& shader)
 	: m_position(pos), m_velocity(vel), m_acceleration(vec3()), m_homeLocation(vec3()), m_maxAcceleration(1.0f), m_maxSpeed(10.0f), m_homeDist(100.0f),
