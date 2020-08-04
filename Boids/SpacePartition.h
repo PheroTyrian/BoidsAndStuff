@@ -19,13 +19,19 @@ struct CellRange
 class SpacePartition
 {
 private:
+	struct Cell
+	{
+		std::list<const Boid*> actors;
+		std::list<vec3> obstacles;
+	};
+
 	int m_storedObjects;
 	int m_sizeX, m_sizeY;
 	float m_partitionWidth;
 	vec3 m_bottomLeft;
 	vec3 m_topRight;
-	std::vector<std::list<const Boid*>> m_partitions;
-	std::list<const Boid*> m_oob;
+	std::vector<Cell> m_partitions;
+	Cell m_oob;
 
 public:
 	bool isOutOfBounds(int x, int y) const;
@@ -34,15 +40,17 @@ public:
 	int getStoredObjects() { return m_storedObjects; }
 	int getSizeX() { return m_sizeX; }
 	int getSizeY() { return m_sizeY; }
-	const std::list<const Boid*>& getOOB() const { return m_oob; }
+	const Cell& getOOB() const { return m_oob; }
 	
-	const std::list<const Boid*>& getCell(int x, int y) const;
-	std::list<const Boid*>& getCell(vec3 position);
+	const Cell& getCell(int x, int y) const;
+	Cell& getCell(vec3 position);
 
 	CellRange findCellRange(vec3 position, float radius) const;
 
-	void add(const Boid* boid);
-	void remove(const Boid* boid);
+	void addActor(const Boid* boid);
+	void removeActor(const Boid* boid);
+	void addObstacle(vec3 obstacle);
+	void removeObstacle(vec3 obstacle);
 
 	void haveMoved(const Boid* boid, vec3 oldPosition);
 

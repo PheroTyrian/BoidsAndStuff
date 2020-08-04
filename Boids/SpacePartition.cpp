@@ -27,7 +27,7 @@ bool SpacePartition::isOutOfBounds(vec3 position) const
 		return true;
 }
 
-const std::list<const Boid*>& SpacePartition::getCell(int x, int y) const
+const SpacePartition::Cell& SpacePartition::getCell(int x, int y) const
 {
 	if (isOutOfBounds(x, y))
 		return m_oob;
@@ -35,7 +35,7 @@ const std::list<const Boid*>& SpacePartition::getCell(int x, int y) const
 		return m_partitions[x + (y * m_sizeX)];
 }
 
-std::list<const Boid*>& SpacePartition::getCell(vec3 position)
+SpacePartition::Cell& SpacePartition::getCell(vec3 position)
 {
 	if (isOutOfBounds(position))
 		return m_oob;
@@ -80,24 +80,34 @@ CellRange SpacePartition::findCellRange(vec3 position, float radius) const
 	return CellRange(blX, blY, trX, trY, oob);
 }
 
-void SpacePartition::add(const Boid* boid)
+void SpacePartition::addActor(const Boid* boid)
 {
 	if (!boid)
 		return;
 
 	vec3 position = boid->getPosition();
 
-	getCell(position).push_back(boid);
+	getCell(position).actors.push_back(boid);
 }
 
-void SpacePartition::remove(const Boid* boid)
+void SpacePartition::removeActor(const Boid* boid)
 {
 	if (!boid)
 		return;
 
 	vec3 position = boid->getPosition();
 
-	getCell(position).remove(boid);
+	getCell(position).actors.remove(boid);
+}
+
+void SpacePartition::addObstacle(vec3 obstacle)
+{
+	getCell(obstacle).obstacles.push_back(obstacle);
+}
+
+void SpacePartition::removeObstacle(vec3 obstacle)
+{
+	getCell(obstacle).obstacles.remove(obstacle);
 }
 
 void SpacePartition::haveMoved(const Boid* boid, vec3 oldPosition)
@@ -107,10 +117,10 @@ void SpacePartition::haveMoved(const Boid* boid, vec3 oldPosition)
 
 	vec3 position = boid->getPosition();
 
-	std::list<const Boid*>& newCell = getCell(position);
-	std::list<const Boid*>& oldCell = getCell(oldPosition);
+	std::list<const Boid*>& newCell = getCell(position).actors;
+	std::list<const Boid*>& oldCell = getCell(oldPosition).actors;
 
-	if (getCell(position) == getCell(oldPosition))
+	if (newCell == oldCell)
 		return;
 	else
 	{

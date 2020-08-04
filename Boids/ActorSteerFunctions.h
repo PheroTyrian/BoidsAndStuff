@@ -15,15 +15,16 @@ namespace ASF
 	void accumulate(vec3& acc, vec3 add);
 	//Collapses a vector to an infinite plane
 	void flattenVectortoPlane(vec3& vector, vec3 plane);
-	//Collects actor data from a list
-	void dataCollectionFromList(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
-		int& count, float& closestDist, const Boid& self, const std::list<const Boid*>& boidList);
-	//Collects actor data from a partition
+
+	//Collects actor and obstacle data from the area surrounding an actor
 	void actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
 		const Boid& self, const SpacePartition& partition);
-	//Collects obstacle data from a partition
-	void obstacleDataCollection(vec3& collision, vec3 facingDirection, vec3 position, 
-		float avoidanceDist, float radius, const std::vector<vec3>& obstacles);
+	//Helper for actorDataCollection. Collects actor data from a list
+	void collectionFromActors(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
+		int& count, float& closestDist, const Boid& self, const std::list<const Boid*>& boidList);
+	//Helper for actorDataCollection. Collects obstacle data from a list
+	void collectionFromObstacles(vec3& collision, vec3 facingDirection, vec3 position, 
+		float avoidanceDist, float radius, const std::list<vec3>& obstList);
 
 	//Final steering activities
 

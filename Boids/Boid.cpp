@@ -12,15 +12,15 @@ Boid::Boid(vec3 pos, vec3 vel, SpacePartition& partition, VertexArray& vao, Inde
 	m_viewArc(0.75f), m_radius(2.0f), m_avoidanceDistance(5.0f), m_detectionDistance(10.0f), m_partition(partition), m_vao(vao),
 	m_ib(ia), m_tex(tex), m_outlineR(outlineTexR), m_outlineB(outlineTexB), m_shader(shader)
 {
-	m_partition.add(this);
+	m_partition.addActor(this);
 }
 
 Boid::~Boid()
 {
-	m_partition.remove(this);
+	m_partition.removeActor(this);
 }
 
-void Boid::steering(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
+void Boid::steering()
 {
 	vec3 oldAcceleration = m_acceleration;
 	m_acceleration = vec3();
@@ -31,12 +31,11 @@ void Boid::steering(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 	vec3 sumCol = vec3();
 
 	ASF::actorDataCollection(sumPos, sumVel, sumCol, *this, m_partition);
-	ASF::obstacleDataCollection(sumCol, facingDir, m_position, m_avoidanceDistance, m_radius, obstacles);
 
 	//Accumulating forces
 	ASF::accumulate(m_acceleration,
 		ASF::collisionAvoidance(sumCol, facingDir));
-	
+
 	ASF::accumulate(m_acceleration,
 		ASF::matchFlockVelocity(sumVel, m_maxAcceleration, facingDir));
 
@@ -57,11 +56,9 @@ void Boid::steering(std::vector<Boid>& boids, std::vector<vec3>& obstacles)
 void Boid::locomotion(float deltaT)
 {
 	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
-	
 	m_velocity = m_velocity.unit() * m_maxSpeed;
 
 	vec3 oldPosition = m_position;
-
 	m_position += m_velocity * deltaT;
 
 	m_partition.haveMoved(this, oldPosition);

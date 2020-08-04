@@ -1,5 +1,6 @@
 #include "vec3.h"
 #include "Boid.h"
+#include "Obstacle.h"
 #include "Renderer.h"
 #include "VertexArray.h"
 #include "Shader.h"
@@ -46,7 +47,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	scrollMoved += yoffset;
 }
 
-void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vector<vec3>& obstacles,
+void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vector<Obstacle>& obstacles,
 	SpacePartition& spacePartition, VertexArray& vao, IndexBuffer& ib, Texture& actorTex, Texture& rTex, Texture& bTex, Shader& shader)
 {
 	//Create a set of boids
@@ -63,7 +64,8 @@ void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vect
 	obstacles.reserve(numObst);
 	for (int i = 0; i < numObst; i++)
 	{
-		obstacles.emplace_back((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
+		vec3 position = vec3((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
+		obstacles.emplace_back(Obstacle(position, spacePartition));
 	}
 }
 
@@ -170,7 +172,7 @@ int main()
 
 		//Create a set of boids and obstacles
 		std::vector<Boid> boids;
-		std::vector<vec3> obstacles;
+		std::vector<Obstacle> obstacles;
 		fillEntities(initialBoids, initialObst, boids, obstacles, spacePartition, 
 			vao, ib, actorTex, rTex, bTex, shader);
 
@@ -241,7 +243,7 @@ int main()
 							vao, ib, actorTex, rTex, bTex, shader);
 						break;
 					case Placement::obstacle:
-						obstacles.emplace_back(clickPosition);
+						obstacles.emplace_back(Obstacle(clickPosition, spacePartition));
 						break;
 					case Placement::destination:
 						destination = clickPosition;
@@ -345,7 +347,7 @@ int main()
 				boid.setDamping(boidDamping);
 				boid.setHomeLocation(destination);
 				//Run boid steering
-				boid.steering(boids, obstacles);
+				boid.steering();
 				//Draw radii
 				boid.drawAuras(renderer, viewProjection, drawAvoid, drawDetect);
 			}
@@ -356,10 +358,12 @@ int main()
 				boid.draw(renderer, viewProjection);
 			}
 
-			for (vec3 obst : obstacles)
+			for (Obstacle obst : obstacles)
 			{
-				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(obst.x, obst.y, obst.z));
-				glm::mat4 modelViewProjection = viewProjection * model;
+				vec3 pos = obst.m_position;
+				glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(boidRadius / 2));
+				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+				glm::mat4 modelViewProjection = viewProjection * model * scale;
 
 				shader.bind();
 				obstTex.bind(0);

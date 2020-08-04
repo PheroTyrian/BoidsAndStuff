@@ -171,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="ActorSteerFunctions.h" />
     <ClInclude Include="Boid.h" />
+    <ClInclude Include="Obstacle.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="SpacePartition.h" />

@@ -37,7 +37,7 @@ public:
 		Shader& shader);
 	~Boid();
 
-	void steering(std::vector<Boid>& boids, std::vector<vec3>& obstacle);
+	void steering();
 	void locomotion(float deltaT);
 	void draw(Renderer& renderer, glm::mat4 viewProjection);
 	void drawAuras(Renderer& renderer, glm::mat4 viewProjection,
