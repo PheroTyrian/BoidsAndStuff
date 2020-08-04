@@ -20,8 +20,8 @@
 constexpr int initialBoids = 100;
 constexpr int initialObst = 10;
 
-static int screenWidth = 1200;
-static int screenHeight = 800;
+static int screenWidth = 1350;
+static int screenHeight = 900;
 
 static int lmbPressed = 0;
 static int rmbPressed = 0;
@@ -161,8 +161,8 @@ int main()
 		//Matrices variables
 		//due to column first ordering MVP is multiplied in reverse: P * V * M
 		//Order: left, right, bottom, top, near, far
-		float orthoWidth = 100.0f;
 		float orthoHeight = 100.0f;
+		float orthoWidth = orthoHeight * screenWidth / screenHeight;
 		glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		//Create space partitioning
@@ -255,7 +255,8 @@ int main()
 				float zoomAmount = scrollMoved;
 				scrollMoved = 0.0f;
 				orthoHeight += zoomAmount * 5.0f;
-				orthoWidth += zoomAmount * 5.0f;
+				orthoHeight = std::max(1.0f, orthoHeight);
+				orthoWidth = orthoHeight * screenWidth / screenHeight;
 			}
 			//Imgui inputs
 			{
@@ -285,7 +286,7 @@ int main()
 					boids.clear();
 					obstacles.clear();
 					orthoHeight = 100.0f;
-					orthoWidth = 100.0f;
+					orthoWidth = orthoHeight * screenWidth / screenHeight;
 					fillEntities(0, 0, boids, obstacles, spacePartition, vao, ib, 
 						actorTex, rTex, bTex, shader);
 				}
