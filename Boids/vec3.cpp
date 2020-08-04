@@ -39,7 +39,7 @@ vec3 vec3::unit() const
 	return vec3(x, y, z);
 }
 
-bool vec3::operator==(const vec3 & rhs) const
+bool vec3::operator==(const vec3& rhs) const
 {
 	if (this->x == rhs.x && this->y == rhs.y && this->z == rhs.z)
 		return true;
@@ -47,7 +47,7 @@ bool vec3::operator==(const vec3 & rhs) const
 		return false;
 }
 
-bool vec3::operator!=(const vec3 & rhs) const
+bool vec3::operator!=(const vec3& rhs) const
 {
 	if (this->x != rhs.x || this->y != rhs.y || this->z != rhs.z)
 		return true;
@@ -55,12 +55,12 @@ bool vec3::operator!=(const vec3 & rhs) const
 		return false;
 }
 
-vec3 vec3::operator+(const vec3 & rhs) const
+vec3 vec3::operator+(const vec3& rhs) const
 {
 	return vec3(this->x + rhs.x, this->y + rhs.y, this->z + rhs.z);
 }
 
-vec3 & vec3::operator+=(const vec3 & rhs)
+vec3 & vec3::operator+=(const vec3& rhs)
 {
 	this->x += rhs.x;
 	this->y += rhs.y;
@@ -68,12 +68,12 @@ vec3 & vec3::operator+=(const vec3 & rhs)
 	return *this;
 }
 
-vec3 vec3::operator-(const vec3 & rhs) const
+vec3 vec3::operator-(const vec3& rhs) const
 {
 	return vec3(this->x - rhs.x, this->y - rhs.y, this->z - rhs.z);
 }
 
-vec3 & vec3::operator-=(const vec3 & rhs)
+vec3 & vec3::operator-=(const vec3& rhs)
 {
 	this->x -= rhs.x;
 	this->y -= rhs.y;
@@ -81,22 +81,22 @@ vec3 & vec3::operator-=(const vec3 & rhs)
 	return *this;
 }
 
-vec3 vec3::operator*(const vec3 & rhs) const
+vec3 vec3::operator*(const vec3& rhs) const
 {
 	return vec3(this->x * rhs.x, this->y * rhs.y, this->z * rhs.z);
 }
 
-vec3 vec3::operator*(const float & rhs) const
+vec3 vec3::operator*(const float& rhs) const
 {
 	return vec3(this->x * rhs, this->y * rhs, this->z * rhs);
 }
 
-vec3 vec3::operator/(const vec3 & rhs) const
+vec3 vec3::operator/(const vec3& rhs) const
 {
 	return vec3(this->x / rhs.x, this->y / rhs.y, this->z / rhs.z);
 }
 
-vec3 vec3::operator/(const float & rhs) const
+vec3 vec3::operator/(const float& rhs) const
 {
 	return vec3(this->x / rhs, this->y / rhs, this->z / rhs);
 }

@@ -37,10 +37,10 @@ void Boid::steering()
 		ASF::collisionAvoidance(sumCol, facingDir));
 
 	ASF::accumulate(m_acceleration,
-		ASF::matchFlockVelocity(sumVel, m_maxAcceleration, facingDir));
+		ASF::matchFlockVelocity(sumVel, m_maxAcceleration, facingDir) * 0.8f);
 
 	ASF::accumulate(m_acceleration,
-		ASF::matchFlockCentre(sumPos, facingDir));
+		ASF::matchFlockCentre(sumPos, facingDir) * 0.8f);
 
 	ASF::accumulate(m_acceleration,
 		ASF::seekTowards(m_position, m_homeLocation, m_homeDist, facingDir));

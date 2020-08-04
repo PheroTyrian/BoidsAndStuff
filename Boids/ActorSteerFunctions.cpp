@@ -2,6 +2,7 @@
 #include "vec3.h"
 #include "Boid.h"
 #include "SpacePartition.h"
+#include <cmath>
 #include <vector>
 #include <list>
 #include <algorithm>
@@ -189,7 +190,10 @@ vec3 ASF::matchFlockVelocity(vec3 sumVelocity, float maxAcceleration, vec3 facin
 	if (sumVelocity != vec3())
 	{
 		vec3 matchVel = sumVelocity / maxAcceleration;
-		return sumVelocity - facingDirection.unit() * sumVelocity.dot(facingDirection.unit());
+		matchVel = matchVel - facingDirection.unit() * matchVel.dot(facingDirection.unit());
+		if (matchVel.mag() > 1.0f)
+			matchVel = matchVel.unit();
+		return matchVel;
 	}
 	return vec3();
 }
@@ -198,8 +202,10 @@ vec3 ASF::matchFlockCentre(vec3 sumPosition, vec3 facingDirection)
 {
 	if (sumPosition != vec3())
 	{
-		vec3 matchPos = sumPosition;
-		return sumPosition - facingDirection.unit() * sumPosition.dot(facingDirection.unit());
+		vec3 matchPos = sumPosition - facingDirection.unit() * sumPosition.dot(facingDirection.unit());
+		if (matchPos.mag() > 1.0f)
+			matchPos = matchPos.unit();
+		return matchPos;
 	}
 	return vec3();
 }
