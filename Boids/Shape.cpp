@@ -4,7 +4,24 @@
 
 bool Shape::isPointInside(vec3 point)
 {
-	return false;//TODO
+	for (Line& line : m_lines)
+	{
+
+	}
+}
+
+void Shape::minkowskySum(std::list<Line>& pointsToAdd)
+{
+	m_lines.sort();
+	pointsToAdd.sort();
+	vec3 nextPosition = m_lines.front().point + pointsToAdd.front().point;
+	m_lines.merge(pointsToAdd);
+	//Recalculate points
+	for (Line& line : m_lines)
+	{
+		line.point = nextPosition;
+		nextPosition = nextPosition + (line.getFacingVec() * line.length);
+	}
 }
 
 Shape::Shape(vec3 position) : m_position(position)
@@ -26,6 +43,7 @@ Shape::Shape(std::list<vec3>& points, vec3 position) : m_position(position)
 	for (vec3 point : points)
 	{
 		vec3 diff = (point - lastPoint).unit();
+		float length = (point - lastPoint).mag();
 		float angle;
 		if (diff.x == 0.0f)
 		{
@@ -36,9 +54,9 @@ Shape::Shape(std::list<vec3>& points, vec3 position) : m_position(position)
 		}
 		else
 		{
-			float angle = atan(diff.y / diff.x);
+			angle = atan(diff.y / diff.x);
 		}
-		m_lines.push_back(Line(lastPoint, angle));
+		m_lines.push_back(Line(lastPoint, angle, length));
 		lastPoint = point;
 	}
 	m_lines.sort();
@@ -48,14 +66,15 @@ void Shape::addSquare(vec3 dir, float length)
 {
 	dir = dir.unit() * length;
 	std::list<vec3> squarePoints;
-	squarePoints.push_back(dir);
+	squarePoints.push_back(vec3(dir.x, dir.y, 0.0f));
 	squarePoints.push_back(vec3(dir.y, -dir.x, 0.0f));
-	squarePoints.push_back(vec3()-dir);
+	squarePoints.push_back(vec3(-dir.x, -dir.y, 0.0f));
 	squarePoints.push_back(vec3(-dir.y, dir.x, 0.0f));
-	Shape tempShape = //TODO
+	Shape tempShape = Shape(squarePoints, m_position);
+	minkowskySum(tempShape.m_lines);
 }
 
-void Shape::addCone(vec3 dir, float width, float length)
+void Shape::addCone(vec3 dir, float angle, float length)
 {
 }
 
