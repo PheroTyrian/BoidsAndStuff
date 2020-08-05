@@ -6,6 +6,19 @@ bool Shape::isPointInside(vec3 point)
 {
 	for (Line& line : m_lines)
 	{
+		vec3 relativePoint = point - line.point;
+		float angle;
+		if (relativePoint.x == 0.0f)
+		{
+			if (relativePoint.y > 0)
+				angle = 0.0f;
+			else
+				angle = M_PI / 2;
+		}
+		else
+		{
+			angle = atan2(relativePoint.y , relativePoint.x);
+		}
 
 	}
 }
@@ -45,16 +58,16 @@ Shape::Shape(std::list<vec3>& points, vec3 position) : m_position(position)
 		vec3 diff = (point - lastPoint).unit();
 		float length = (point - lastPoint).mag();
 		float angle;
-		if (diff.x == 0.0f)
+		if (diff.y == 0.0f)
 		{
-			if (diff.y > 0)
-				angle = M_PI / 2;
+			if (diff.x > 0)
+				angle = 0.0f;
 			else
 				angle = M_PI;
 		}
 		else
 		{
-			angle = atan(diff.y / diff.x);
+			angle = atan2(diff.y , diff.x);
 		}
 		m_lines.push_back(Line(lastPoint, angle, length));
 		lastPoint = point;
