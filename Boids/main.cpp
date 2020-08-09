@@ -18,8 +18,8 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
 
-constexpr int initialBoids = 100;
-constexpr int initialObst = 10;
+static int initialBoids = 100;
+static int initialObst = 10;
 
 static int screenWidth = 1350;
 static int screenHeight = 900;
@@ -47,8 +47,10 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	scrollMoved += yoffset;
 }
 
-void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vector<Obstacle>& obstacles,
-	SpacePartition& spacePartition, VertexArray& vao, IndexBuffer& ib, Texture& actorTex, Texture& rTex, Texture& bTex, Shader& shader)
+void fillEntities(int numBoids, int numObst, float obstRadius, 
+	std::vector<Boid>& boids, std::vector<Obstacle>& obstacles,
+	SpacePartition& spacePartition, VertexArray& vao, IndexBuffer& ib, 
+	Texture& actorTex, Texture& rTex, Texture& bTex, Shader& shader)
 {
 	//Create a set of boids
 	boids.reserve(numBoids);
@@ -65,7 +67,7 @@ void fillEntities(int numBoids, int numObst, std::vector<Boid>& boids, std::vect
 	for (int i = 0; i < numObst; i++)
 	{
 		vec3 position = vec3((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
-		obstacles.emplace_back(Obstacle(position, spacePartition));
+		obstacles.emplace_back(Obstacle(position, obstRadius, spacePartition));
 	}
 }
 
@@ -170,13 +172,7 @@ int main()
 		//Create space partitioning
 		SpacePartition spacePartition = SpacePartition(32, 32, 5.0f);
 
-		//Create a set of boids and obstacles
-		std::vector<Boid> boids;
-		std::vector<Obstacle> obstacles;
-		fillEntities(initialBoids, initialObst, boids, obstacles, spacePartition, 
-			vao, ib, actorTex, rTex, bTex, shader);
-
-		//Setting boid properties (updated each frame)
+		//Setting up boid properties (updated each frame)
 		float simSpeed = 1.0f;
 		float boidAcc = 0.1f;
 		float boidSpeed = 1.0f;
@@ -185,11 +181,19 @@ int main()
 		float boidRadius = 2.0f;
 		float boidAvoid = 10.0f;
 		float boidDetect = 11.0f;
-		bool boidDamping = true;
+		float obstRadius = 2.0f;
+		bool boidClearPathUse = false;
+		bool updateSettings = true;
 		bool drawAvoid = false;
 		bool drawDetect = false;
 		vec3 destination = vec3();
 		Placement placeType = Placement::actor;
+
+		//Create a set of boids and obstacles
+		std::vector<Boid> boids;
+		std::vector<Obstacle> obstacles;
+		fillEntities(initialBoids, initialObst, obstRadius, boids, obstacles, spacePartition,
+			vao, ib, actorTex, rTex, bTex, shader);
 
 		//Set callback triggers
 		glfwSetWindowSizeCallback(window, window_size_callback);
@@ -239,11 +243,23 @@ int main()
 					switch (placeType)
 					{
 					case Placement::actor:
+					{
 						boids.emplace_back(clickPosition, vec3(), spacePartition,
 							vao, ib, actorTex, rTex, bTex, shader);
+						Boid& boid = boids[boids.size() - 1];
+						boid.setMaxAcceleration(boidAcc);
+						boid.setSpeed(boidSpeed);
+						boid.setHomeDist(boidHome);
+						boid.setViewArc(boidView);
+						boid.setRadius(boidRadius);
+						boid.setAvoidanceDist(boidAvoid);
+						boid.setDetectionDist(boidDetect);
+						boid.setClearUsage(boidClearPathUse);
+						boid.setHomeLocation(destination);
+					}
 						break;
 					case Placement::obstacle:
-						obstacles.emplace_back(Obstacle(clickPosition, spacePartition));
+						obstacles.emplace_back(Obstacle(clickPosition, obstRadius, spacePartition));
 						break;
 					case Placement::destination:
 						destination = clickPosition;
@@ -264,24 +280,25 @@ int main()
 			{
 				//static int counter = 0;
 				ImGui::SliderFloat("Simulation speed", &simSpeed, 0.0f, 1.0f);
-				ImGui::Text("Boid settings");
+				ImGui::Text("Actor settings");
 				ImGui::SliderFloat("Max Acceleration", &boidAcc, 0.01f, 0.2f);
 				ImGui::SliderFloat("Max Speed", &boidSpeed, 0.01f, 1.0f);
 				ImGui::SliderFloat("Home Bounds", &boidHome, 1.0f, 200.0f);
 				ImGui::SliderFloat("View Arc", &boidView, 0.0f, 1.0f);
-				ImGui::SliderFloat("Object Radius", &boidRadius, 0.1f, 20.0f);
+				ImGui::SliderFloat("Radius", &boidRadius, 0.1f, 20.0f);
 				ImGui::SliderFloat("Avoidance Distance", &boidAvoid, 0.0f, 100.0f);
 				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
-				ImGui::Checkbox("Damping", &boidDamping);
+				ImGui::SliderFloat("Obstacle Radius", &obstRadius, 0.1f, 20.0f);
+
+				ImGui::Checkbox("UseClearPath", &boidClearPathUse);
 				ImGui::SameLine();
+				ImGui::Checkbox("Update Actor Settings", &updateSettings);
+
 				ImGui::Checkbox("Draw avoidance", &drawAvoid);
 				ImGui::SameLine();
 				ImGui::Checkbox("Draw detection", &drawDetect);
-				//ImGui::SliderFloat("Z", &translation.z, 100.0f, -100.0f);
+				
 				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-				//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
-				//ImGui::Checkbox("Another Window", &show_another_window);
 
 				if (ImGui::Button("Restart"))
 				{
@@ -289,9 +306,23 @@ int main()
 					obstacles.clear();
 					orthoHeight = 100.0f;
 					orthoWidth = orthoHeight * screenWidth / screenHeight;
-					fillEntities(0, 0, boids, obstacles, spacePartition, vao, ib, 
-						actorTex, rTex, bTex, shader);
+					fillEntities(initialBoids, initialObst, obstRadius, boids, obstacles, 
+						spacePartition, vao, ib, actorTex, rTex, bTex, shader);
+					for (Boid& boid : boids)
+					{
+						boid.setMaxAcceleration(boidAcc);
+						boid.setSpeed(boidSpeed);
+						boid.setHomeDist(boidHome);
+						boid.setViewArc(boidView);
+						boid.setRadius(boidRadius);
+						boid.setAvoidanceDist(boidAvoid);
+						boid.setDetectionDist(boidDetect);
+						boid.setClearUsage(boidClearPathUse);
+						boid.setHomeLocation(destination);
+					}
 				}
+				ImGui::SameLine();
+				ImGui::InputInt2("", &initialBoids);
 
 				if (ImGui::Button("Place actor"))
 					placeType = Placement::actor;
@@ -322,6 +353,7 @@ int main()
 			glm::mat4 projection = glm::ortho(-orthoWidth, orthoWidth, -orthoHeight, orthoHeight, -10.0f, 10.0f);
 			glm::mat4 viewProjection = projection * view;
 
+			//Draw current destination marker
 			{
 				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(destination.x, destination.y, destination.z));
 				glm::mat4 modelViewProjection = viewProjection * model;
@@ -337,15 +369,18 @@ int main()
 			for (Boid& boid : boids)
 			{
 				//Allow for in flight adjustments
-				boid.setMaxAcceleration(boidAcc);
-				boid.setSpeed(boidSpeed);
-				boid.setHomeDist(boidHome);
-				boid.setViewArc(boidView);
-				boid.setRadius(boidRadius);
-				boid.setAvoidanceDist(boidAvoid);
-				boid.setDetectionDist(boidDetect);
-				boid.setDamping(boidDamping);
-				boid.setHomeLocation(destination);
+				if (updateSettings)
+				{
+					boid.setMaxAcceleration(boidAcc);
+					boid.setSpeed(boidSpeed);
+					boid.setHomeDist(boidHome);
+					boid.setViewArc(boidView);
+					boid.setRadius(boidRadius);
+					boid.setAvoidanceDist(boidAvoid);
+					boid.setDetectionDist(boidDetect);
+					boid.setClearUsage(boidClearPathUse);
+					boid.setHomeLocation(destination);
+				}
 				//Run boid steering
 				boid.steering();
 				//Draw radii
@@ -358,8 +393,11 @@ int main()
 				boid.draw(renderer, viewProjection);
 			}
 
-			for (Obstacle obst : obstacles)
+			for (Obstacle& obst : obstacles)
 			{
+				if (updateSettings)
+					obst.m_radius = obstRadius;
+
 				vec3 pos = obst.m_position;
 				glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(boidRadius / 2));
 				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));

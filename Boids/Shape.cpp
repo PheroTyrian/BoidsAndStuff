@@ -6,21 +6,27 @@ bool Shape::isPointInside(vec3 point)
 {
 	for (Line& line : m_lines)
 	{
+		bool firstSet = true;
+		bool onLeft = false;
 		vec3 relativePoint = point - line.point;
-		float angle;
-		if (relativePoint.x == 0.0f)
+		double angle = atan2(relativePoint.y, relativePoint.x);
+		double delta = atan2(sin(angle - (double)line.angle), cos(angle - (double)line.angle));
+		if (delta > 0.0f)
 		{
-			if (relativePoint.y > 0)
-				angle = 0.0f;
-			else
-				angle = M_PI / 2;
+			if (firstSet)
+				onLeft = true;
+			else if (!onLeft)
+				return false;
 		}
 		else
 		{
-			angle = atan2(relativePoint.y , relativePoint.x);
+			if (firstSet)
+				onLeft = false;
+			else if (onLeft)
+				return false;
 		}
-
 	}
+	return true;
 }
 
 void Shape::minkowskySum(std::list<Line>& pointsToAdd)
@@ -37,44 +43,6 @@ void Shape::minkowskySum(std::list<Line>& pointsToAdd)
 	}
 }
 
-Shape::Shape(vec3 position) : m_position(position)
-{
-}
-
-Shape::Shape(vec3 position, std::list<Line>& lines) : m_position(position)
-{
-	for (Line line : lines)
-	{
-		m_lines.push_back(line);
-	}
-	m_lines.sort();
-}
-
-Shape::Shape(std::list<vec3>& points, vec3 position) : m_position(position)
-{
-	vec3 lastPoint = points.back();
-	for (vec3 point : points)
-	{
-		vec3 diff = (point - lastPoint).unit();
-		float length = (point - lastPoint).mag();
-		float angle;
-		if (diff.y == 0.0f)
-		{
-			if (diff.x > 0)
-				angle = 0.0f;
-			else
-				angle = M_PI;
-		}
-		else
-		{
-			angle = atan2(diff.y , diff.x);
-		}
-		m_lines.push_back(Line(lastPoint, angle, length));
-		lastPoint = point;
-	}
-	m_lines.sort();
-}
-
 void Shape::addSquare(vec3 dir, float length)
 {
 	dir = dir.unit() * length;
@@ -87,8 +55,54 @@ void Shape::addSquare(vec3 dir, float length)
 	minkowskySum(tempShape.m_lines);
 }
 
-void Shape::addCone(vec3 dir, float angle, float length)
+void Shape::addCone(vec3 relativePos, float objectRadius, float scaleFactor)
 {
+	double angleFromPos = asin(objectRadius / relativePos.mag());
+	double middleAngle = atan2(relativePos.y, relativePos.x);
+	float angle1 = middleAngle - angleFromPos;
+	float angle2 = middleAngle + angleFromPos;
+	//Normalise angles
+	while (angle1 < 0.0f)
+		angle1 += M_PI * 2;
+	while (angle2 < 0.0f)
+		angle2 += M_PI * 2;
+	//Get points from those angles
+	vec3 point1 = vec3(cos(angle1), sin(angle1), 0.0f) * relativePos.mag() * scaleFactor;
+	vec3 point2 = vec3(cos(angle2), sin(angle2), 0.0f) * relativePos.mag() * scaleFactor;
+	std::list<vec3> conePoints;
+	conePoints.push_back(vec3());
+	conePoints.push_back(point1);
+	conePoints.push_back(point2);
+	Shape tempShape = Shape(conePoints, vec3());
+	minkowskySum(tempShape.m_lines);
+}
+
+Shape::Shape(vec3 position) : m_position(position)
+{
+}
+
+Shape::Shape(vec3 position, std::list<Line>& lines) : m_position(position)
+{
+	for (Line line : lines)
+	{
+		m_lines.emplace_back(line);
+	}
+	m_lines.sort();
+}
+
+Shape::Shape(std::list<vec3>& points, vec3 position) : m_position(position)
+{
+	vec3 lastPoint = points.back();
+	for (vec3 point : points)
+	{
+		//Add the previous point to the shape
+		vec3 diff = (point - lastPoint).unit();
+		float length = (point - lastPoint).mag();
+		float angle = atan2(diff.y, diff.x);
+		m_lines.emplace_back(Line(lastPoint, angle, length));
+		lastPoint = point;
+	}
+	m_lines.sort();
 }
 
 vec3 Shape::Line::getFacingVec()

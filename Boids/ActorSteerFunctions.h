@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Shape.h"
 #include <vector>
 #include <list>
 
 class vec3;
 class SpacePartition;
 class Boid;
+class Obstacle;
 
 //Actor Steer Functions
 namespace ASF
@@ -24,12 +26,16 @@ namespace ASF
 		int& count, float& closestDist, const Boid& self, const std::list<const Boid*>& boidList);
 	//Helper for actorDataCollection. Collects obstacle data from a list
 	void collectionFromObstacles(vec3& collision, vec3 facingDirection, vec3 position, 
-		float avoidanceDist, float radius, const std::list<vec3>& obstList);
+		float avoidanceDist, float radius, const std::list<const Obstacle*>& obstList);
+	//
+	std::list<Shape>& velocityObjectCollection(const Boid& self,
+		const SpacePartition& partition);
 
 	//Final steering activities
 
 	//Avoid potential future collisions
-	vec3 collisionAvoidance(vec3 collision, vec3 facingDirection);
+	vec3 simpleCollisionAvoidance(vec3 closestCollision, vec3 facingDirection);
+	vec3 clearPathSampling(vec3 currentVelocity, std::list<Shape>& velocityObstacles);
 	//Attempt to move within a given distance from the destination by the 
 	//shortest route possible
 	vec3 seekTowards(vec3 position, vec3 homeLocation, float homeDist, vec3 facingDirection);

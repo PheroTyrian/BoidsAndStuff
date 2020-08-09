@@ -22,7 +22,7 @@ private:
 	float m_radius;
 	float m_avoidanceDistance;
 	float m_detectionDistance;
-	bool m_damping = true;
+	bool m_useClearPath = false;
 
 	SpacePartition& m_partition;
 	VertexArray& m_vao;
@@ -55,9 +55,9 @@ public:
 	float getRadius() const { return m_radius;  }
 	float getAvoidanceDist() const { return m_avoidanceDistance; }
 	float getDetectionDist() const { return m_detectionDistance; }
-	bool getDamping() const { return m_damping; }
+	bool getClearUsage() const { return m_useClearPath; }
 
-	void setDamping(bool damp) { m_damping = damp; }
+	void setClearUsage(bool useCP) { m_useClearPath = useCP; }
 	void setMaxAcceleration(float newMax) { m_maxAcceleration = newMax; }
 	void setSpeed(float newSpeed) { m_maxSpeed = newSpeed; }
 	void setHomeDist(float newDist) { m_homeDist = newDist; }

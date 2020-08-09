@@ -32,7 +32,7 @@ void Boid::steering()
 
 	//Accumulating forces
 	ASF::accumulate(m_acceleration,
-		ASF::collisionAvoidance(sumCol, facingDir));
+		ASF::simpleCollisionAvoidance(sumCol, facingDir));
 
 	ASF::accumulate(m_acceleration,
 		ASF::matchFlockVelocity(sumVel, m_maxAcceleration, facingDir) * 0.8f);
@@ -44,8 +44,7 @@ void Boid::steering()
 		ASF::seekTowards(m_position, m_homeLocation, m_homeDist, facingDir));
 
 	//Damping
-	if (m_damping)
-		m_acceleration = (m_acceleration + oldAcceleration) / 2;
+	m_acceleration = (m_acceleration + oldAcceleration) / 2;
 
 	//Ensure acceleration is perpendicular to velocity
 	m_acceleration = m_acceleration - facingDir.unit() * m_acceleration.dot(facingDir.unit());

@@ -1,10 +1,11 @@
 #pragma once
 
+#include "vec3.h"
 #include <vector>
 #include <list>
-#include "vec3.h"
 
 class Boid;
+class Obstacle;
 
 struct CellRange
 {
@@ -22,7 +23,7 @@ private:
 	struct Cell
 	{
 		std::list<const Boid*> actors;
-		std::list<vec3> obstacles;
+		std::list<const Obstacle*> obstacles;
 	};
 
 	int m_storedObjects;
@@ -49,8 +50,8 @@ public:
 
 	void addActor(const Boid* boid);
 	void removeActor(const Boid* boid);
-	void addObstacle(vec3 obstacle);
-	void removeObstacle(vec3 obstacle);
+	void addObstacle(const Obstacle* obstacle);
+	void removeObstacle(const Obstacle* obstacle);
 
 	void haveMoved(const Boid* boid, vec3 oldPosition);
 

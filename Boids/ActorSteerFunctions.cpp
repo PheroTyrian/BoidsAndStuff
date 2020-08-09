@@ -1,6 +1,7 @@
 #include "ActorSteerFunctions.h"
 #include "vec3.h"
 #include "Boid.h"
+#include "Obstacle.h"
 #include "SpacePartition.h"
 #include <vector>
 #include <list>
@@ -82,6 +83,8 @@ void ASF::collectionFromActors(vec3& sumPosition, vec3& sumVelocity, vec3& colli
 {
 	for (const Boid* boid : boidList)
 	{
+		if (!boid)
+			continue;
 		//rather than creating the flock store the average of nearby velocities and positions simultaneously as it saves on temp data
 		vec3 diff = boid->getPosition() - self.getPosition();
 
@@ -133,16 +136,19 @@ void ASF::collectionFromActors(vec3& sumPosition, vec3& sumVelocity, vec3& colli
 }
 
 void ASF::collectionFromObstacles(vec3& collision, vec3 facingDirection, vec3 position,
-	float avoidanceDist, float radius, const std::list<vec3>& obstList)
+	float avoidanceDist, float radius, const std::list<const Obstacle*>& obstList)
 {
 	//Create temp storage of closest obstacle
 	float closestDist = avoidanceDist;
 	if (collision != vec3())
 		closestDist = collision.mag();
 
-	for (const vec3& obstacle : obstList)
+	for (const Obstacle* obstacle : obstList)
 	{
-		vec3 diff = obstacle - position;
+		if (!obstacle)
+			continue;
+
+		vec3 diff = obstacle->m_position - position;
 
 		//Scale by facing direction
 		float distForward = facingDirection.dot(diff);
@@ -152,7 +158,7 @@ void ASF::collectionFromObstacles(vec3& collision, vec3 facingDirection, vec3 po
 			continue;
 
 		//Cull results too far from the sides
-		if ((diff - (facingDirection * distForward)).mag() > radius)
+		if ((diff - (facingDirection * distForward)).mag() > radius + obstacle->m_radius)
 			continue;
 
 		//If closest obstacle set as such and store relative position
@@ -164,13 +170,30 @@ void ASF::collectionFromObstacles(vec3& collision, vec3 facingDirection, vec3 po
 	}
 }
 
-vec3 ASF::collisionAvoidance(vec3 collision, vec3 facingDirection)
+std::list<Shape>& ASF::velocityObjectCollection(const Boid& self, 
+	const SpacePartition& partition)
+{
+	//Create a list of shapes
+	std::list<Shape> velocityObjects;
+	//For all nearby boids and obstacles create a VO and translate by (v1 + v2) / 2
+	return velocityObjects;
+}
+
+vec3 ASF::simpleCollisionAvoidance(vec3 collision, vec3 facingDirection)
 {
 	if (collision != vec3())
 	{
 		vec3 avoidDirection = vec3() - (collision - facingDirection * collision.dot(facingDirection));
 		return avoidDirection.unit();
 	}
+	return vec3();
+}
+
+vec3 ASF::clearPathSampling(vec3 currentVelocity, std::list<Shape>& velocityObstacles)
+{
+	//Construct set of potential velocities to sample
+	//Sort by fit towards existing accel goal
+	//Test each for possibility against VOs
 	return vec3();
 }
 

@@ -27,13 +27,13 @@ public:
 	//Adds two shapes together to get the region 
 	//defined by the area the two would intersect
 	void minkowskySum(std::list<Line>& pointsToAdd);
+	//Creates a square and adds it to the shape via Minkowsky summation
+	void addSquare(vec3 dir, float length);
+	//Creates a cone and adds it to the shape via Minkowsky summation
+	void addCone(vec3 relativePos, float objectRadius, float scaleFactor);
 
 	Shape(vec3 position);
 	Shape(vec3 position, std::list<Line>& lines);
 	Shape(std::list<vec3>& points, vec3 position);
-	//Creates a square and adds it to the shape via Minkowsky summation
-	void addSquare(vec3 dir, float length);
-	//Creates a cone and adds it to the shape via Minkowsky summation
-	void addCone(vec3 dir, float angle, float length);
 };
 

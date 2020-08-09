@@ -1,5 +1,6 @@
 #include "SpacePartition.h"
 #include "Boid.h"
+#include "Obstacle.h"
 
 #include <cmath>
 #include <algorithm>
@@ -100,14 +101,24 @@ void SpacePartition::removeActor(const Boid* boid)
 	getCell(position).actors.remove(boid);
 }
 
-void SpacePartition::addObstacle(vec3 obstacle)
+void SpacePartition::addObstacle(const Obstacle* obstacle)
 {
-	getCell(obstacle).obstacles.push_back(obstacle);
+	if (!obstacle)
+		return;
+
+	vec3 position = obstacle->m_position;
+
+	getCell(position).obstacles.push_back(obstacle);
 }
 
-void SpacePartition::removeObstacle(vec3 obstacle)
+void SpacePartition::removeObstacle(const Obstacle* obstacle)
 {
-	getCell(obstacle).obstacles.remove(obstacle);
+	if (!obstacle)
+		return;
+
+	vec3 position = obstacle->m_position;
+
+	getCell(position).obstacles.remove(obstacle);
 }
 
 void SpacePartition::haveMoved(const Boid* boid, vec3 oldPosition)
