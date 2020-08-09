@@ -44,41 +44,8 @@ void ASF::flattenVectortoPlane(vec3& vector, vec3 plane)
 	vector -= plane * plane.dot(vector);
 }
 
-void ASF::actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
-	const Boid& self, const SpacePartition& partition)
-{
-	//Create temp storage of closest collision
-	float closestDist = self.getAvoidanceDist();
-	if (collision != vec3())
-		closestDist = collision.square();
-	int sumCount = 0;
-	vec3 facing = self.getVelocity().unit();
-	//Find the search region
-	CellRange range = partition.findCellRange(self.getPosition(), std::max(self.getDetectionDist(), self.getAvoidanceDist()));
-
-	//Check through each cell in range
-	for (int y = range.blY; y < range.trY; y++)
-	{
-		for (int x = range.blX; x < range.trX; x++)
-		{
-			collectionFromActors(sumPosition, sumVelocity, collision,
-				sumCount, closestDist, self, partition.getCell(x, y).actors);
-			collectionFromObstacles(collision, facing, self.getPosition(),
-				self.getAvoidanceDist(), self.getRadius(), partition.getCell(x, y).obstacles);
-		}
-	}
-	if (range.incOOB)
-	{
-		collectionFromActors(sumPosition, sumVelocity, collision,
-			sumCount, closestDist, self, partition.getOOB().actors);
-		collectionFromObstacles(collision, facing, self.getPosition(),
-			self.getAvoidanceDist(), self.getRadius(), partition.getOOB().obstacles);
-	}
-	sumPosition / sumCount;
-	sumVelocity / sumCount;
-}
-
-void ASF::collectionFromActors(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
+//Helper for actorDataCollection. Collects actor data from a list
+void collectFromActors(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
 	int& count, float& closestDist, const Boid& self, const std::list<const Boid*>& boidList)
 {
 	for (const Boid* boid : boidList)
@@ -135,7 +102,8 @@ void ASF::collectionFromActors(vec3& sumPosition, vec3& sumVelocity, vec3& colli
 	}
 }
 
-void ASF::collectionFromObstacles(vec3& collision, vec3 facingDirection, vec3 position,
+//Helper for actorDataCollection. Collects obstacle data from a list
+void collectFromObstacles(vec3& collision, vec3 facingDirection, vec3 position,
 	float avoidanceDist, float radius, const std::list<const Obstacle*>& obstList)
 {
 	//Create temp storage of closest obstacle
@@ -170,12 +138,116 @@ void ASF::collectionFromObstacles(vec3& collision, vec3 facingDirection, vec3 po
 	}
 }
 
-std::list<Shape>& ASF::velocityObjectCollection(const Boid& self, 
+void ASF::actorDataCollection(vec3& sumPosition, vec3& sumVelocity, vec3& collision,
+	const Boid& self, const SpacePartition& partition)
+{
+	//Create temp storage of closest collision
+	float closestDist = self.getAvoidanceDist();
+	if (collision != vec3())
+		closestDist = collision.square();
+	int sumCount = 0;
+	vec3 facing = self.getVelocity().unit();
+	//Find the search region
+	CellRange range = partition.findCellRange(self.getPosition(), std::max(self.getDetectionDist(), self.getAvoidanceDist()));
+
+	//Check through each cell in range
+	for (int y = range.blY; y < range.trY; y++)
+	{
+		for (int x = range.blX; x < range.trX; x++)
+		{
+			collectFromActors(sumPosition, sumVelocity, collision,
+				sumCount, closestDist, self, partition.getCell(x, y).actors);
+			collectFromObstacles(collision, facing, self.getPosition(),
+				self.getAvoidanceDist(), self.getRadius(), partition.getCell(x, y).obstacles);
+		}
+	}
+	if (range.incOOB)
+	{
+		collectFromActors(sumPosition, sumVelocity, collision,
+			sumCount, closestDist, self, partition.getOOB().actors);
+		collectFromObstacles(collision, facing, self.getPosition(),
+			self.getAvoidanceDist(), self.getRadius(), partition.getOOB().obstacles);
+	}
+	sumPosition / sumCount;
+	sumVelocity / sumCount;
+}
+
+void getActorVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
+	std::list<Shape>& velObsts, const std::list<const Boid*>& boidList)
+{
+	for (const Boid* boid : boidList)
+	{
+		if (!boid)
+			continue;
+
+		vec3 diff = boid->getPosition() - position;
+
+		if (diff.mag() > avoidDist)
+			continue;
+
+		vec3 velPos = (velocity + boid->getVelocity()) / 2;
+
+		Shape tempVO = Shape(velPos);
+		//Create a cone of vectors that intersect the boid
+		tempVO.addCone(diff, boid->getRadius(), avoidDist * 10.0f);
+		//Add the rough shape of self to this viathe Minkowsky sum
+		tempVO.addSquare(velocity.unit(), radius);
+
+		velObsts.push_back(tempVO);
+	}
+}
+
+void getObstacleVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
+	std::list<Shape>& velObsts, const std::list<const Obstacle*>& obstList)
+{
+	for (const Obstacle* obst : obstList)
+	{
+		if (!obst)
+			continue;
+
+		vec3 diff = obst->m_position - position;
+
+		if (diff.mag() > avoidDist)
+			continue;
+
+		vec3 velPos = velocity / 2;
+
+		Shape tempVO = Shape(velPos);
+		//Create a cone of vectors that intersect the obstacle
+		tempVO.addCone(diff, obst->m_radius, avoidDist * 10.0f);
+		//Add the rough shape of self to this viathe Minkowsky sum
+		tempVO.addSquare(velocity.unit(), radius);
+
+		velObsts.push_back(tempVO);
+	}
+}
+
+std::list<Shape>& ASF::velocityObstacleCollection(const Boid& self, 
 	const SpacePartition& partition)
 {
-	//Create a list of shapes
+	//Create a list of shapes and gather common data
 	std::list<Shape> velocityObjects;
+	vec3 pos = self.getPosition();
+	vec3 vel = self.getVelocity();
+	float avoid = self.getAvoidanceDist();
+	float radius = self.getRadius();
+
 	//For all nearby boids and obstacles create a VO and translate by (v1 + v2) / 2
+	CellRange range = partition.findCellRange(self.getPosition(), self.getAvoidanceDist());
+	for (int y = range.blY; y < range.trY; y++)
+	{
+		for (int x = range.blX; x < range.trX; x++)
+		{
+			getActorVOs(pos, vel, avoid, radius, velocityObjects, partition.getCell(x, y).actors);
+			getObstacleVOs(pos, vel, avoid, radius, velocityObjects, partition.getCell(x, y).obstacles);
+		}
+	}
+	if (range.incOOB)
+	{
+		getActorVOs(pos, vel, avoid, radius, velocityObjects, partition.getOOB().actors);
+		getObstacleVOs(pos, vel, avoid, radius, velocityObjects, partition.getOOB().obstacles);
+	}
+	//Need to include Type 1 constraint
 	return velocityObjects;
 }
 
@@ -189,11 +261,40 @@ vec3 ASF::simpleCollisionAvoidance(vec3 collision, vec3 facingDirection)
 	return vec3();
 }
 
-vec3 ASF::clearPathSampling(vec3 currentVelocity, std::list<Shape>& velocityObstacles)
+vec3 ASF::clearPathSampling(vec3 targetVel, float maxVel, std::list<Shape>& velocityObstacles)
 {
 	//Construct set of potential velocities to sample
-	//Sort by fit towards existing accel goal
+	float facingAngle = atan2(targetVel.y, targetVel.x);
+	float angle1 = facingAngle + M_PI / 4;
+	float angle2 = facingAngle - M_PI / 4;
+	float angle3 = facingAngle + M_PI / 2;
+	float angle4 = facingAngle - M_PI / 2;
+	vec3 samples[5] = {
+		targetVel.unit() * maxVel,
+		vec3(cos(angle1), sin(angle1), 0.0f) * maxVel,
+		vec3(cos(angle2), sin(angle2), 0.0f)* maxVel,
+		vec3(cos(angle3), sin(angle3), 0.0f)* maxVel,
+		vec3(cos(angle4), sin(angle4), 0.0f)* maxVel
+	};
 	//Test each for possibility against VOs
+	//Gradually reducing vector length until a solution is found
+	for (float scale = 1.0f; scale > 0.0f; scale -= 0.1f)
+	{
+		bool sampleSuccess[5] = { true, true, true, true, true };
+		for (Shape& vo : velocityObstacles)
+		{
+			for (int i = 0; i < 5; ++i)
+			{
+				if (sampleSuccess[i])
+					sampleSuccess[i] = !vo.isPointInside(samples[i] * scale);
+			}
+		}
+		for (int i = 0; i < 5; ++i)
+		{
+			if (sampleSuccess[i])
+				return samples[i] * scale;
+		}
+	}
 	return vec3();
 }
 

@@ -57,6 +57,8 @@ public:
 	float getDetectionDist() const { return m_detectionDistance; }
 	bool getClearUsage() const { return m_useClearPath; }
 
+	void setPosition(vec3 pos) { m_position = pos; }
+	void setVelocity(vec3 vel) { m_velocity = vel; }
 	void setClearUsage(bool useCP) { m_useClearPath = useCP; }
 	void setMaxAcceleration(float newMax) { m_maxAcceleration = newMax; }
 	void setSpeed(float newSpeed) { m_maxSpeed = newSpeed; }

@@ -18,6 +18,9 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 static int initialBoids = 100;
 static int initialObst = 10;
 
@@ -68,6 +71,32 @@ void fillEntities(int numBoids, int numObst, float obstRadius,
 	{
 		vec3 position = vec3((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
 		obstacles.emplace_back(Obstacle(position, obstRadius, spacePartition));
+	}
+}
+
+void setUpCircle(float obstRadius, std::vector<Boid>& boids, 
+	std::vector<Obstacle>& obstacles, SpacePartition& partition)
+{
+	float angle = 0.0f;
+	//Align boids to circle
+	for (int i = 0; i < boids.size(); i++)
+	{
+		vec3 pos = vec3(cos(angle) * 80.0f, sin(angle) * 80.0f, 0.0f);
+		vec3 vel = vec3();
+		boids[i].setPosition(pos);
+		boids[i].setVelocity(vel);
+		boids[i].setHomeLocation(vec3() - pos);
+		angle += (2 * M_PI / boids.size());
+	}
+	int numObst = obstacles.size();
+	obstacles.clear();
+	obstacles.reserve(numObst);
+	//Align obstacles to inner circle
+	for (int i = 0; i < numObst; i++)
+	{
+		angle += (2 * M_PI / numObst);
+		vec3 position = vec3(cos(angle) * 40.0f, sin(angle) * 40.0f, 0.0f);
+		obstacles.emplace_back(Obstacle(position, obstRadius, partition));
 	}
 }
 
@@ -323,6 +352,8 @@ int main()
 				}
 				ImGui::SameLine();
 				ImGui::InputInt2("", &initialBoids);
+				if (ImGui::Button("Circle Test"))
+					setUpCircle(obstRadius, boids, obstacles, spacePartition);
 
 				if (ImGui::Button("Place actor"))
 					placeType = Placement::actor;
