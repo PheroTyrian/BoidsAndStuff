@@ -211,6 +211,7 @@ int main()
 		float boidAvoid = 10.0f;
 		float boidDetect = 11.0f;
 		float obstRadius = 2.0f;
+		bool boidFlocking = true;
 		bool boidClearPathUse = false;
 		bool updateSettings = true;
 		bool drawAvoid = false;
@@ -284,6 +285,7 @@ int main()
 						boid.setAvoidanceDist(boidAvoid);
 						boid.setDetectionDist(boidDetect);
 						boid.setClearUsage(boidClearPathUse);
+						boid.setFlocking(boidFlocking);
 						boid.setHomeLocation(destination);
 					}
 						break;
@@ -319,13 +321,15 @@ int main()
 				ImGui::SliderFloat("Detection Distance", &boidDetect, 0.0f, 100.0f);
 				ImGui::SliderFloat("Obstacle Radius", &obstRadius, 0.1f, 20.0f);
 
-				ImGui::Checkbox("UseClearPath", &boidClearPathUse);
+				ImGui::Checkbox("Use RVO collision avoidance", &boidClearPathUse);
 				ImGui::SameLine();
-				ImGui::Checkbox("Update Actor Settings", &updateSettings);
+				ImGui::Checkbox("Use flocking behaviour", &boidFlocking);
 
 				ImGui::Checkbox("Draw avoidance", &drawAvoid);
 				ImGui::SameLine();
 				ImGui::Checkbox("Draw detection", &drawDetect);
+
+				ImGui::Checkbox("Update Actor Settings", &updateSettings);
 				
 				//ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
@@ -347,6 +351,7 @@ int main()
 						boid.setAvoidanceDist(boidAvoid);
 						boid.setDetectionDist(boidDetect);
 						boid.setClearUsage(boidClearPathUse);
+						boid.setFlocking(boidFlocking);
 						boid.setHomeLocation(destination);
 					}
 				}
@@ -410,6 +415,7 @@ int main()
 					boid.setAvoidanceDist(boidAvoid);
 					boid.setDetectionDist(boidDetect);
 					boid.setClearUsage(boidClearPathUse);
+					boid.setFlocking(boidFlocking);
 					boid.setHomeLocation(destination);
 				}
 				//Run boid steering

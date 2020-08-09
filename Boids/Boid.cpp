@@ -31,17 +31,22 @@ void Boid::steering()
 	ASF::actorDataCollection(sumPos, sumVel, sumCol, *this, m_partition);
 
 	//Accumulating forces
-	ASF::accumulate(m_acceleration,
-		ASF::simpleCollisionAvoidance(sumCol, facingDir));
+	if (!m_useClearPath)
+		ASF::accumulate(m_acceleration,
+			ASF::simpleCollisionAvoidance(sumCol, facingDir));
 
-	ASF::accumulate(m_acceleration,
-		ASF::matchFlockVelocity(sumVel, m_maxAcceleration, facingDir) * 0.8f);
+	if (m_useFlockBehaviour)
+		ASF::accumulate(m_acceleration,
+			ASF::matchFlockVelocity(sumVel, m_maxAcceleration, facingDir) * 0.8f);
 
-	ASF::accumulate(m_acceleration,
-		ASF::matchFlockCentre(sumPos, facingDir) * 0.8f);
+	if (m_useFlockBehaviour)
+		ASF::accumulate(m_acceleration,
+			ASF::matchFlockCentre(sumPos, facingDir) * 0.8f);
 
 	ASF::accumulate(m_acceleration,
 		ASF::seekTowards(m_position, m_homeLocation, m_homeDist, facingDir));
+
+	//TODO: Put RVO here
 
 	//Damping
 	m_acceleration = (m_acceleration + oldAcceleration) / 2;

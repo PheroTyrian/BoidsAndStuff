@@ -22,6 +22,8 @@ private:
 	float m_radius;
 	float m_avoidanceDistance;
 	float m_detectionDistance;
+
+	bool m_useFlockBehaviour = true;
 	bool m_useClearPath = false;
 
 	SpacePartition& m_partition;
@@ -59,6 +61,7 @@ public:
 
 	void setPosition(vec3 pos) { m_position = pos; }
 	void setVelocity(vec3 vel) { m_velocity = vel; }
+	void setFlocking(bool useFlocking) { m_useFlockBehaviour = useFlocking; }
 	void setClearUsage(bool useCP) { m_useClearPath = useCP; }
 	void setMaxAcceleration(float newMax) { m_maxAcceleration = newMax; }
 	void setSpeed(float newSpeed) { m_maxSpeed = newSpeed; }
