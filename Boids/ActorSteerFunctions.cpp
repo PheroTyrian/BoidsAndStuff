@@ -189,7 +189,7 @@ void getActorVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
 
 		Shape tempVO = Shape(velPos);
 		//Create a cone of vectors that intersect the boid
-		tempVO.addCone(diff, boid->getRadius(), avoidDist * 10.0f);
+		tempVO.addConeSection(diff, radius, boid->getRadius(), avoidDist * 10.0f);
 		//Add the rough shape of self to this viathe Minkowsky sum
 		tempVO.addSquare(velocity.unit(), radius);
 
@@ -214,7 +214,7 @@ void getObstacleVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
 
 		Shape tempVO = Shape(velPos);
 		//Create a cone of vectors that intersect the obstacle
-		tempVO.addCone(diff, obst->m_radius, avoidDist * 10.0f);
+		tempVO.addConeSection(diff, radius, obst->m_radius, avoidDist * 10.0f);
 		//Add the rough shape of self to this viathe Minkowsky sum
 		tempVO.addSquare(velocity.unit(), radius);
 
