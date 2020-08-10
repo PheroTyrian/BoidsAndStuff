@@ -214,7 +214,7 @@ void getObstacleVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
 
 		Shape tempVO = Shape(velPos);
 		//Create a cone of vectors that intersect the obstacle
-		tempVO.addConeSection(diff, radius, obst->m_radius, avoidDist * 10.0f);
+		tempVO.addConeSection(diff, radius, obst->m_radius, avoidDist * 100.0f);
 		//Add the rough shape of self to this viathe Minkowsky sum
 		tempVO.addSquare(velocity.unit(), radius);
 
@@ -222,11 +222,10 @@ void getObstacleVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
 	}
 }
 
-std::list<Shape>& ASF::velocityObstacleCollection(const Boid& self, 
+void ASF::velocityObstacleCollection(const Boid& self, std::list<Shape>& velocityObstacles,
 	const SpacePartition& partition)
 {
 	//Create a list of shapes and gather common data
-	std::list<Shape> velocityObjects;
 	vec3 pos = self.getPosition();
 	vec3 vel = self.getVelocity();
 	float avoid = self.getAvoidanceDist();
@@ -238,17 +237,15 @@ std::list<Shape>& ASF::velocityObstacleCollection(const Boid& self,
 	{
 		for (int x = range.blX; x < range.trX; x++)
 		{
-			getActorVOs(pos, vel, avoid, radius, velocityObjects, partition.getCell(x, y).actors);
-			getObstacleVOs(pos, vel, avoid, radius, velocityObjects, partition.getCell(x, y).obstacles);
+			getActorVOs(pos, vel, avoid, radius, velocityObstacles, partition.getCell(x, y).actors);
+			getObstacleVOs(pos, vel, avoid, radius, velocityObstacles, partition.getCell(x, y).obstacles);
 		}
 	}
 	if (range.incOOB)
 	{
-		getActorVOs(pos, vel, avoid, radius, velocityObjects, partition.getOOB().actors);
-		getObstacleVOs(pos, vel, avoid, radius, velocityObjects, partition.getOOB().obstacles);
+		getActorVOs(pos, vel, avoid, radius, velocityObstacles, partition.getOOB().actors);
+		getObstacleVOs(pos, vel, avoid, radius, velocityObstacles, partition.getOOB().obstacles);
 	}
-	//Need to include Type 1 constraint
-	return velocityObjects;
 }
 
 vec3 ASF::simpleCollisionAvoidance(vec3 collision, vec3 facingDirection)
@@ -261,38 +258,49 @@ vec3 ASF::simpleCollisionAvoidance(vec3 collision, vec3 facingDirection)
 	return vec3();
 }
 
-vec3 ASF::clearPathSampling(vec3 targetVel, float maxVel, std::list<Shape>& velocityObstacles)
+vec3 ASF::clearPathSampling(vec3 targetAcceleration, vec3 currentVel, float maxVel, 
+	std::list<Shape>& velocityObstacles)
 {
+	vec3 samples[6];
 	//Construct set of potential velocities to sample
-	float facingAngle = atan2(targetVel.y, targetVel.x);
-	float angle1 = facingAngle + M_PI / 4;
-	float angle2 = facingAngle - M_PI / 4;
-	float angle3 = facingAngle + M_PI / 2;
-	float angle4 = facingAngle - M_PI / 2;
-	vec3 samples[5] = {
-		targetVel.unit() * maxVel,
-		vec3(cos(angle1), sin(angle1), 0.0f) * maxVel,
-		vec3(cos(angle2), sin(angle2), 0.0f)* maxVel,
-		vec3(cos(angle3), sin(angle3), 0.0f)* maxVel,
-		vec3(cos(angle4), sin(angle4), 0.0f)* maxVel
-	};
-	//Test each for possibility against VOs
-	//Gradually reducing vector length until a solution is found
+	{
+		vec3 targetVel = currentVel + targetAcceleration;
+		float targetAngle = atan2(targetVel.y, targetVel.x);
+		float facingAngle = atan2(currentVel.y, currentVel.x);
+		float angle1 = facingAngle + M_PI / 4;
+		float angle2 = facingAngle - M_PI / 4;
+		float angle3 = facingAngle + M_PI / 2;
+		float angle4 = facingAngle - M_PI / 2;
+		samples[0] = targetVel.unit() * maxVel;
+		samples[1] = targetVel.unit() * maxVel;
+		samples[2] = vec3(cos(angle1), sin(angle1), 0.0f) * maxVel;
+		samples[3] = vec3(cos(angle2), sin(angle2), 0.0f) * maxVel;
+		samples[4] = vec3(cos(angle3), sin(angle3), 0.0f) * maxVel;
+		samples[5] = vec3(cos(angle4), sin(angle4), 0.0f) * maxVel;
+	}
+	//Gradually reduce vector length until a solution is found
 	for (float scale = 1.0f; scale > 0.0f; scale -= 0.1f)
 	{
-		bool sampleSuccess[5] = { true, true, true, true, true };
+		//Test each sample vec for collision against VOs
+		bool sampleSuccess[6] = { true, true, true, true, true, true };
 		for (Shape& vo : velocityObstacles)
 		{
-			for (int i = 0; i < 5; ++i)
+			for (int i = 0; i < 6; ++i)
 			{
 				if (sampleSuccess[i])
 					sampleSuccess[i] = !vo.isPointInside(samples[i] * scale);
 			}
 		}
-		for (int i = 0; i < 5; ++i)
+		//The first that doesn't collide with any is taken as the result
+		//Samples are ordered with faster movement options and directions prefered by other 
+		//steering functions given precedence
+		for (int i = 0; i < 6; ++i)
 		{
 			if (sampleSuccess[i])
-				return samples[i] * scale;
+			{
+				vec3 velocitySuggestion = samples[i] * scale;
+				return velocitySuggestion - currentVel;
+			}
 		}
 	}
 	return vec3();

@@ -23,7 +23,7 @@ private:
 public:
 	//Checks if a point lies inside the collection 
 	//of sorted lines that makes up the shape
-	bool isPointInside(vec3 pointInRealspace);
+	bool isPointInside(vec3 point);
 	//Adds two shapes together to get the region 
 	//defined by the area the two would intersect
 	void minkowskySum(std::list<Line>& pointsToAdd);

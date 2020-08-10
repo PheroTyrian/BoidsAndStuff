@@ -23,12 +23,16 @@ void Boid::steering()
 	vec3 oldAcceleration = m_acceleration;
 	m_acceleration = vec3();
 	vec3 facingDir = m_velocity.unit();
-	//Find "flock" data
+	//Find actor steering data
 	vec3 sumPos = vec3();
 	vec3 sumVel = vec3();
 	vec3 sumCol = vec3();
+	std::list<Shape> velObst;
 
 	ASF::actorDataCollection(sumPos, sumVel, sumCol, *this, m_partition);
+
+	if (m_useClearPath)
+		ASF::velocityObstacleCollection(*this, velObst, m_partition);
 
 	//Accumulating forces
 	if (!m_useClearPath)
@@ -46,18 +50,25 @@ void Boid::steering()
 	ASF::accumulate(m_acceleration,
 		ASF::seekTowards(m_position, m_homeLocation, m_homeDist, facingDir));
 
-	//TODO: Put RVO here
-
-	//Damping
-	m_acceleration = (m_acceleration + oldAcceleration) / 2;
-
 	//Ensure acceleration is perpendicular to velocity
 	m_acceleration = m_acceleration - facingDir.unit() * m_acceleration.dot(facingDir.unit());
+
+	//TODO: Put RVO here
+	if (m_useClearPath)
+	{
+		vec3 suggestedAcc = m_acceleration;
+		m_acceleration = vec3();
+		ASF::accumulate(m_acceleration,
+			ASF::clearPathSampling(suggestedAcc, m_velocity, m_maxSpeed, velObst));
+		ASF::accumulate(m_acceleration, suggestedAcc);
+	}
+	//Damping
+	m_acceleration = (m_acceleration + oldAcceleration) / 2;
 }
 
 void Boid::locomotion(float deltaT)
 {
-	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
+	m_velocity += m_acceleration.unit() * m_maxAcceleration * deltaT;
 	m_velocity = m_velocity.unit() * m_maxSpeed;
 
 	vec3 oldPosition = m_position;

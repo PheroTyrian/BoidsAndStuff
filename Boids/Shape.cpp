@@ -2,28 +2,35 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-bool Shape::isPointInside(vec3 pointInRealspace)
+bool Shape::isPointInside(vec3 point)
 {
 	bool firstSet = true;
 	bool onLeft = false;
 	for (Line& line : m_lines)
 	{
-		vec3 relativePoint = pointInRealspace - (line.point + m_position);
-		vec3 perpDir = vec3(-relativePoint.y, relativePoint.x, 0.0f);
-		float delta = perpDir.dot(relativePoint);
+		vec3 relativePoint = point - (line.point + m_position);
+		vec3 lineDir = line.getFacingVec();
+		vec3 perpDir = vec3(-lineDir.y, lineDir.x, 0.0f);
+		float delta = perpDir.unit().dot(relativePoint);
 		//For the point to be inside a convex shape it must be on the same side of all 
 		//lines that represent that convex shape
 		if (delta > 0.0f)
 		{
 			if (firstSet)
+			{
 				onLeft = true;
+				firstSet = false;
+			}
 			else if (!onLeft)
 				return false;
 		}
 		else
 		{
 			if (firstSet)
+			{
 				onLeft = false;
+				firstSet = false;
+			}
 			else if (onLeft)
 				return false;
 		}
@@ -35,7 +42,12 @@ void Shape::minkowskySum(std::list<Line>& pointsToAdd)
 {
 	m_lines.sort();
 	pointsToAdd.sort();
-	vec3 nextPosition = m_lines.front().point + pointsToAdd.front().point;
+	vec3 nextPosition;
+	if (m_lines.size() == 0)
+		nextPosition = pointsToAdd.front().point;
+	else
+		nextPosition = m_lines.front().point + pointsToAdd.front().point;
+
 	m_lines.merge(pointsToAdd);
 	//Recalculate points
 	for (Line& line : m_lines)
