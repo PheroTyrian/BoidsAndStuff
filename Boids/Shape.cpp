@@ -2,15 +2,17 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-bool Shape::isPointInside(vec3 point)
+bool Shape::isPointInside(vec3 pointInRealspace)
 {
+	bool firstSet = true;
+	bool onLeft = false;
 	for (Line& line : m_lines)
 	{
-		bool firstSet = true;
-		bool onLeft = false;
-		vec3 relativePoint = point - line.point;
-		double angle = atan2(relativePoint.y, relativePoint.x);
-		double delta = atan2(sin(angle - (double)line.angle), cos(angle - (double)line.angle));
+		vec3 relativePoint = pointInRealspace - (line.point + m_position);
+		vec3 perpDir = vec3(-relativePoint.y, relativePoint.x, 0.0f);
+		float delta = perpDir.dot(relativePoint);
+		//For the point to be inside a convex shape it must be on the same side of all 
+		//lines that represent that convex shape
 		if (delta > 0.0f)
 		{
 			if (firstSet)
@@ -55,25 +57,28 @@ void Shape::addSquare(vec3 dir, float length)
 	minkowskySum(tempShape.m_lines);
 }
 
-void Shape::addCone(vec3 relativePos, float objectRadius, float scaleFactor)
+void Shape::addConeSection(vec3 relativePos, float selfRadius, float objectRadius, float scaleFactor)
 {
-	double angleFromPos = asin(objectRadius / relativePos.mag());
-	double middleAngle = atan2(relativePos.y, relativePos.x);
-	float angle1 = middleAngle - angleFromPos;
-	float angle2 = middleAngle + angleFromPos;
-	//Normalise angles
-	while (angle1 < 0.0f)
-		angle1 += M_PI * 2;
-	while (angle2 < 0.0f)
-		angle2 += M_PI * 2;
-	//Get points from those angles
-	vec3 point1 = vec3(cos(angle1), sin(angle1), 0.0f) * relativePos.mag() * scaleFactor;
-	vec3 point2 = vec3(cos(angle2), sin(angle2), 0.0f) * relativePos.mag() * scaleFactor;
+	float dist = relativePos.mag();
+	float combinedRadius = selfRadius + objectRadius;
+	//Create a pi/2 anticlockwise rotated perpendicular
+	vec3 perpDir = vec3(-relativePos.y, relativePos.x, 0.0f);
+	//Calculate components of close points on the cone
+	vec3 distComponent = relativePos.unit() * (dist - combinedRadius);
+	vec3 perpComponent = perpDir.unit() * tan(asin(combinedRadius / dist)) * (dist - combinedRadius);
+	//Create the set of points for the cone section
+	vec3 closePoint1 = distComponent - perpComponent;
+	vec3 closePoint2 = distComponent + perpComponent;
+	vec3 farPoint1 = closePoint1 * scaleFactor;
+	vec3 farPoint2 = closePoint2 * scaleFactor;
+	//Create a temporary shape that defines the new cone
 	std::list<vec3> conePoints;
-	conePoints.push_back(vec3());
-	conePoints.push_back(point1);
-	conePoints.push_back(point2);
+	conePoints.push_back(closePoint1);
+	conePoints.push_back(farPoint1);
+	conePoints.push_back(farPoint2);
+	conePoints.push_back(closePoint2);
 	Shape tempShape = Shape(conePoints, vec3());
+	//Add to existing shape
 	minkowskySum(tempShape.m_lines);
 }
 
