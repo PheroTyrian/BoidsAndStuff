@@ -82,9 +82,10 @@ void setUpCircle(float obstRadius, std::vector<Boid>& boids,
 	for (int i = 0; i < boids.size(); i++)
 	{
 		vec3 pos = vec3(cos(angle) * 80.0f, sin(angle) * 80.0f, 0.0f);
-		vec3 vel = vec3();
+		vec3 vel = vec3()-pos.unit();
 		boids[i].setPosition(pos);
 		boids[i].setVelocity(vel);
+		boids[i].setHomeDist(1.0f);
 		boids[i].setHomeLocation(vec3() - pos);
 		angle += (2 * M_PI / boids.size());
 	}
@@ -358,7 +359,10 @@ int main()
 				ImGui::SameLine();
 				ImGui::InputInt2("", &initialBoids);
 				if (ImGui::Button("Circle Test"))
+				{
+					updateSettings = false;
 					setUpCircle(obstRadius, boids, obstacles, spacePartition);
+				}
 
 				if (ImGui::Button("Place actor"))
 					placeType = Placement::actor;

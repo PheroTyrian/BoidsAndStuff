@@ -53,22 +53,18 @@ void Boid::steering()
 	//Ensure acceleration is perpendicular to velocity
 	m_acceleration = m_acceleration - facingDir.unit() * m_acceleration.dot(facingDir.unit());
 
-	//TODO: Put RVO here
+	//RVO
 	if (m_useClearPath)
-	{
-		vec3 suggestedAcc = m_acceleration;
-		m_acceleration = vec3();
-		ASF::accumulate(m_acceleration,
-			ASF::clearPathSampling(suggestedAcc, m_velocity, m_maxSpeed, velObst));
-		ASF::accumulate(m_acceleration, suggestedAcc);
-	}
+		m_acceleration = 
+			ASF::clearPathSampling(m_acceleration, m_velocity, m_maxSpeed, velObst);
+
 	//Damping
 	m_acceleration = (m_acceleration + oldAcceleration) / 2;
 }
 
 void Boid::locomotion(float deltaT)
 {
-	m_velocity += m_acceleration.unit() * m_maxAcceleration * deltaT;
+	m_velocity += m_acceleration * m_maxAcceleration * deltaT;
 	m_velocity = m_velocity.unit() * m_maxSpeed;
 
 	vec3 oldPosition = m_position;
@@ -84,7 +80,12 @@ void Boid::draw(Renderer & renderer, glm::mat4 viewProjection)
 
 	//Get the rotation pivot
 	glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 vel = glm::normalize(glm::vec3(m_velocity.x, m_velocity.y, m_velocity.z));
+	glm::vec3 vel;
+	if (m_velocity != vec3())
+		vel = glm::normalize(glm::vec3(m_velocity.x, m_velocity.y, m_velocity.z));
+	else
+		vel = glm::vec3(1.0f);
+
 	glm::vec3 pivot = glm::normalize(glm::cross(worldUp, vel));
 
 	//Get rotation amount

@@ -182,7 +182,7 @@ void getActorVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
 
 		vec3 diff = boid->getPosition() - position;
 
-		if (diff.mag() > avoidDist)
+		if (diff == vec3() || diff.mag() > avoidDist)
 			continue;
 
 		vec3 velPos = (velocity + boid->getVelocity()) / 2;
@@ -207,7 +207,7 @@ void getObstacleVOs(vec3 position, vec3 velocity, float avoidDist, float radius,
 
 		vec3 diff = obst->m_position - position;
 
-		if (diff.mag() > avoidDist)
+		if (diff == vec3() || diff.mag() > avoidDist)
 			continue;
 
 		vec3 velPos = velocity / 2;
@@ -299,7 +299,7 @@ vec3 ASF::clearPathSampling(vec3 targetAcceleration, vec3 currentVel, float maxV
 			if (sampleSuccess[i])
 			{
 				vec3 velocitySuggestion = samples[i] * scale;
-				return velocitySuggestion - currentVel;
+				return (velocitySuggestion - currentVel).unit();
 			}
 		}
 	}
@@ -311,9 +311,8 @@ vec3 ASF::seekTowards(vec3 position, vec3 homeLocation, float homeDist, vec3 fac
 	vec3 homeVec = homeLocation - position;
 	if (homeVec.mag() > homeDist)
 	{
-		float mult = (homeVec.mag() - homeDist) / homeDist;
 		vec3 avoidDirection = homeVec - facingDirection.unit() * homeVec.dot(facingDirection.unit());
-		return avoidDirection.unit() * mult;
+		return avoidDirection.unit();
 	}
 	return vec3();
 }
