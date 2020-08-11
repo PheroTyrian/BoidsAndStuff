@@ -111,7 +111,6 @@ unsigned int Shader::compileShader(unsigned int type, const std::string& source)
 		GLCall(glDeleteShader(id));
 		return 0;
 	}
-
 	return id;
 }
 
