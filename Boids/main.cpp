@@ -70,7 +70,7 @@ void fillEntities(int numBoids, int numObst, float obstRadius,
 	for (int i = 0; i < numObst; i++)
 	{
 		vec3 position = vec3((rand() % 201) - 100, (rand() % 201) - 100, 0.0f);
-		obstacles.emplace_back(Obstacle(position, obstRadius, spacePartition));
+		obstacles.emplace_back(position, obstRadius, spacePartition);
 	}
 }
 
@@ -97,7 +97,7 @@ void setUpCircle(float obstRadius, std::vector<Boid>& boids,
 	{
 		angle += (2 * M_PI / numObst);
 		vec3 position = vec3(cos(angle) * 40.0f, sin(angle) * 40.0f, 0.0f);
-		obstacles.emplace_back(Obstacle(position, obstRadius, partition));
+		obstacles.emplace_back(position, obstRadius, partition);
 	}
 }
 
@@ -200,7 +200,7 @@ int main()
 		glm::vec3 translation = glm::vec3(0.0f, 0.0f, 0.0f);
 
 		//Create space partitioning
-		SpacePartition spacePartition = SpacePartition(32, 32, 5.0f);
+		SpacePartition spacePartition = SpacePartition(48, 48, 10.0f);
 
 		//Setting up boid properties (updated each frame)
 		float simSpeed = 1.0f;
@@ -209,7 +209,7 @@ int main()
 		float boidHome = 60.0f;
 		float boidView = 0.5f;
 		float boidRadius = 2.0f;
-		float boidAvoid = 10.0f;
+		float boidAvoid = 20.0f;
 		float boidDetect = 11.0f;
 		float obstRadius = 2.0f;
 		bool boidFlocking = true;
@@ -258,7 +258,7 @@ int main()
 				glfwGetCursorPos(window, &mouseX, &mouseY);
 				mouseX = (mouseX * orthoWidth * 2 / screenWidth) - orthoWidth;
 				mouseY = (double)orthoHeight - (mouseY * orthoHeight * 2 / screenHeight);
-				vec3 clickPosition((float)mouseX, (float)mouseY, 0.0f);
+				vec3 clickPosition((float)mouseX - translation.x, (float)mouseY - translation.y, 0.0f);
 
 				int lmb = lmbPressed;
 				lmbPressed = 0;
@@ -291,7 +291,7 @@ int main()
 					}
 						break;
 					case Placement::obstacle:
-						obstacles.emplace_back(Obstacle(clickPosition, obstRadius, spacePartition));
+						obstacles.emplace_back(clickPosition, obstRadius, spacePartition);
 						break;
 					case Placement::destination:
 						destination = clickPosition;
