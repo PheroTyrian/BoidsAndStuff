@@ -185,6 +185,7 @@
   <ItemGroup>
     <ClInclude Include="ActorSteerFunctions.h" />
     <ClInclude Include="Boid.h" />
+    <ClInclude Include="dependencies\include\glad\glad.h" />
     <ClInclude Include="dependencies\include\GLFW\glfw3.h" />
     <ClInclude Include="dependencies\include\GLFW\glfw3native.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -201,7 +202,7 @@
   <ItemGroup>
     <ClCompile Include="ActorSteerFunctions.cpp" />
     <ClCompile Include="Boid.cpp" />
-    <ClCompile Include="glad.c" />
+    <ClCompile Include="dependencies\include\glad\glad.c" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
