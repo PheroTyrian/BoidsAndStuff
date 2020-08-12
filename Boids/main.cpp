@@ -383,7 +383,7 @@ int main()
 					ImGui::Text("RMB places the destination");
 					break;
 				}
-
+				ImGui::Text("Scroll wheel zooms and arrow keys pan camera");
 				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			}
 
