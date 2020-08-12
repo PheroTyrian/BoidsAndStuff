@@ -57,6 +57,9 @@
     <ClInclude Include="dependencies\include\GLFW\glfw3native.h">
       <Filter>External</Filter>
     </ClInclude>
+    <ClInclude Include="imgui\imgui.h">
+      <Filter>External</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Boid.cpp">

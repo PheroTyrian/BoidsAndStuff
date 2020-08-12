@@ -237,8 +237,7 @@ int main()
 		{
 			renderer.clear();
 			ImGui_ImplGlfwGL3_NewFrame();
-			//float deltaT = 1.0f;//static_cast<float>((clock() - timeCounter)/ 20);
-			//timeCounter = clock();
+			ImGui::Begin("Controls");
 
 			//Key inputs
 			if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
@@ -451,7 +450,7 @@ int main()
 
 				renderer.draw(vao, ib, shader);
 			}
-			
+			ImGui::End();
 			//Rendering GUI
 			ImGui::Render();
 			ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
