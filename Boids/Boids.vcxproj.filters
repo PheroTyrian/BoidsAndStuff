@@ -110,7 +110,7 @@
     <ClCompile Include="Shape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="dependencies\include\glad\glad.c">
+    <ClCompile Include="dependencies\src\glad.c">
       <Filter>External</Filter>
     </ClCompile>
   </ItemGroup>
