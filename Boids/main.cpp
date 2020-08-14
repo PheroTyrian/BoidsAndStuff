@@ -21,8 +21,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-static int initialBoids = 100;
-static int initialObst = 10;
+static int initialValues[2] = { 100, 10 };
 
 static int screenWidth = 1350;
 static int screenHeight = 900;
@@ -223,7 +222,7 @@ int main()
 		//Create a set of boids and obstacles
 		std::vector<Boid> boids;
 		std::vector<Obstacle> obstacles;
-		fillEntities(initialBoids, initialObst, obstRadius, boids, obstacles, spacePartition,
+		fillEntities(initialValues[0], initialValues[1], obstRadius, boids, obstacles, spacePartition,
 			vao, ib, actorTex, rTex, bTex, shader);
 
 		//Set callback triggers
@@ -339,7 +338,8 @@ int main()
 					obstacles.clear();
 					orthoHeight = 100.0f;
 					orthoWidth = orthoHeight * screenWidth / screenHeight;
-					fillEntities(initialBoids, initialObst, obstRadius, boids, obstacles, 
+					translation = glm::vec3(0.0f, 0.0f, 0.0f);
+					fillEntities(initialValues[0], initialValues[1], obstRadius, boids, obstacles, 
 						spacePartition, vao, ib, actorTex, rTex, bTex, shader);
 					for (Boid& boid : boids)
 					{
@@ -356,7 +356,7 @@ int main()
 					}
 				}
 				ImGui::SameLine();
-				ImGui::InputInt2("", &initialBoids);
+				ImGui::InputInt2("", &initialValues[0]);
 				if (ImGui::Button("Circle Test"))
 				{
 					updateSettings = false;
@@ -439,7 +439,7 @@ int main()
 					obst.m_radius = obstRadius;
 
 				vec3 pos = obst.m_position;
-				glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(boidRadius / 2));
+				glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(obst.m_radius / 2));
 				glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
 				glm::mat4 modelViewProjection = viewProjection * model * scale;
 
